@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     environment:
       - DOMAIN=cycwebcobperu.net
-      - API_TARGET=http://rtc-api:3001
+      - API_TARGET=http://rtc_api:3001
     depends_on:
       - rtc_api
     ports:

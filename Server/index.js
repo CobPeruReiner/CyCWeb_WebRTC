@@ -23,13 +23,19 @@ const ACME_ROOT = "/var/www/certbot";
 app.use("/.well-known", express.static(path.join(ACME_ROOT, ".well-known")));
 
 // Proxy TODO hacia backend (sirve build + API)
-const API_TARGET = process.env.API_TARGET || "http://rtc-api:3001";
+const API_TARGET = process.env.API_TARGET || "http://rtc_api:3001";
 app.use(
   "/",
   createProxyMiddleware({
     target: API_TARGET,
     changeOrigin: true,
     autoRewrite: true,
+    logLevel: "debug",
+    onError(err, req, res) {
+      console.error("Proxy error:", err.code || err.message);
+      res.writeHead(502);
+      res.end("Bad gateway");
+    },
   })
 );
 
