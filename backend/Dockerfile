@@ -1,6 +1,5 @@
 FROM node:20-alpine
 
-# Usuario no-root
 RUN addgroup -S app && adduser -S app -G app
 WORKDIR /app
 
@@ -12,7 +11,9 @@ RUN npm ci --omit=dev
 
 COPY . .
 
-# PM2 para cluster de 2 workers (2 vCPU)
+# 👇 Crea y entrega permisos del árbol de /app al usuario 'app'
+RUN mkdir -p /app/logs && chown -R app:app /app
+
 RUN npm i -g pm2
 
 USER app
