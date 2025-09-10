@@ -8,7 +8,7 @@ const { createProxyMiddleware } = require("http-proxy-middleware");
 const app = express();
 app.set("trust proxy", true);
 
-// —— Health (primero, para healthchecks)
+// —— Health (primero)
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
 // —— Forzar HTTPS a :444 (si llega por HTTP)
@@ -30,7 +30,7 @@ app.use((req, res, next) => {
 const ACME_ROOT = "/var/www/certbot";
 app.use("/.well-known", express.static(path.join(ACME_ROOT, ".well-known")));
 
-// —— Proxies (crear UNA sola instancia por destino)
+// —— Proxies (una sola instancia por destino)
 const FRONTEND_TARGET = process.env.FRONTEND_TARGET || "http://frontend:80";
 const API_TARGET = process.env.API_TARGET || "http://rtc_api:3001";
 
@@ -54,9 +54,21 @@ const spaProxy = createProxyMiddleware({
   timeout: 15000,
 });
 
-// —— Ruteo: API bajo /api, resto => frontend
+// —— 1) API bajo /api (cubre GET/POST/OPTIONS/etc. en /api)
 app.use("/api", apiProxy);
 
+// —— 2) Compatibilidad: toda petición NO GET/HEAD -> API (incluye OPTIONS, POST, PUT, DELETE, PATCH)
+app.use((req, res, next) => {
+  if (req.path.startsWith("/.well-known") || req.path === "/health")
+    return next();
+  const method = req.method.toUpperCase();
+  if (method !== "GET" && method !== "HEAD") {
+    return apiProxy(req, res, next);
+  }
+  return next();
+});
+
+// —— 3) Todo lo demás (GET/HEAD de SPA/estáticos) -> frontend
 app.use((req, res, next) => {
   if (req.path.startsWith("/.well-known") || req.path === "/health")
     return next();
@@ -67,9 +79,8 @@ app.use((req, res, next) => {
 const httpServer = http.createServer(app);
 httpServer.keepAliveTimeout = 65000;
 httpServer.headersTimeout = 66000;
-// Soporte WS sobre HTTP (si la API usa websockets)
+// WS sobre HTTP (si tu API usa websockets)
 httpServer.on("upgrade", (req, socket, head) => {
-  // Solo proxea upgrades destinados al API (/api)
   if (req.url && req.url.startsWith("/api")) {
     apiProxy.upgrade(req, socket, head);
   } else {
@@ -78,7 +89,7 @@ httpServer.on("upgrade", (req, socket, head) => {
 });
 httpServer.listen(8080, "0.0.0.0", () => console.log("HTTP listo en :8080"));
 
-// —— Servidor HTTPS (si hay certs)
+// —— Servidor HTTPS
 const DOMAIN = process.env.DOMAIN || "cycwebcobperu.net";
 const LIVE_DIR = `/etc/letsencrypt/live/${DOMAIN}`;
 const KEY = path.join(LIVE_DIR, "privkey.pem");
@@ -90,7 +101,6 @@ if (fs.existsSync(KEY) && fs.existsSync(CERT)) {
   httpsServer = https.createServer(options, app);
   httpsServer.keepAliveTimeout = 65000;
   httpsServer.headersTimeout = 66000;
-  // WS también en HTTPS
   httpsServer.on("upgrade", (req, socket, head) => {
     if (req.url && req.url.startsWith("/api")) {
       apiProxy.upgrade(req, socket, head);

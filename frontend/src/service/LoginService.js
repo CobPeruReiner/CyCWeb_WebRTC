@@ -22,6 +22,8 @@ api.interceptors.request.use(
 );
 export class LoginService {
     logIn(e) {
+        console.log("Api URL:", process.env.REACT_APP_ROUTE_API);
+
         return api_login.post("login", e).then((res) => res.data);
     }
 
