@@ -1,4 +1,4 @@
-const { db } = require("../config/database");
+const { db } = require("../config/database_v1");
 
 const getTelefonosCompanie = async (_req, res) => {
   console.log("===========================================");

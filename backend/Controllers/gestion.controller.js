@@ -1,6 +1,6 @@
 const dotenv = require("dotenv");
 const { QueryTypes } = require("sequelize");
-const { db } = require("../config/database");
+const { db } = require("../config/database_v1");
 const moment = require("moment-timezone");
 const axios = require("axios");
 const https = require("https");

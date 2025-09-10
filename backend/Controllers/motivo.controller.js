@@ -1,5 +1,5 @@
 const { QueryTypes } = require("sequelize");
-const { db } = require("../config/database");
+const { db } = require("../config/database_v1");
 
 const MotivoListEfecto = async (req, res) => {
   const { ids } = req.body;

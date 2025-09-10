@@ -8,6 +8,7 @@ const isChrome = () => {
     const ua = navigator.userAgent || "";
     return /Chrome\//.test(ua) && !/OPR\//.test(ua) && !/Edg\//.test(ua);
 };
+
 const isCellular = () => {
     try {
         const nc = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
@@ -18,6 +19,7 @@ const isCellular = () => {
         return false;
     }
 };
+
 const getIceServers = () => {
     const stun = { urls: "stun:stun.l.google.com:19302" };
     const turnU = { urls: "turn:cycwebcobperu.net:3478", username: "webrtc", credential: "webrtc123" };
@@ -25,8 +27,11 @@ const getIceServers = () => {
     const turnTS = { urls: "turns:cycwebcobperu.net:5349", username: "webrtc", credential: "webrtc123" };
     return isChrome() || isCellular() ? [turnTS, turnT, turnU, stun] : [turnU, turnT, turnTS, stun];
 };
+
 const FORCE_RELAY = localStorage.getItem("force_relay") === "1";
+
 const sanitize = (s) => (s || "").replace(/[^0-9*#]/g, "");
+
 const preferOpus = (sdp) => {
     try {
         const lines = sdp.split("\n");
@@ -50,7 +55,9 @@ const preferOpus = (sdp) => {
 };
 
 export const SIPProvider = ({ children }) => {
-    const panelContext = useContext(PanelContext);
+    // const panelContext = useContext(PanelContext);
+
+    const { userLogin, setSelectedPhone: setPanelSelectedPhone } = useContext(PanelContext);
 
     // Toast (expuesto para que montes <Toast ref={toastJsIP} /> donde prefieras)
     const toast = useRef(null);
@@ -58,9 +65,13 @@ export const SIPProvider = ({ children }) => {
     const notify = useCallback((opts) => toastJsIP.current?.show({ life: 3000, ...opts }), []);
 
     // Credenciales: anexo como user/pass
-    const anexo = panelContext?.userLogin?.ANEXO_BACKUP ?? "";
-    const SIP_EXT = anexo;
-    const SIP_PASS = anexo;
+    // const anexo = panelContext?.userLogin?.ANEXO_BACKUP ?? "";
+    // const SIP_EXT = anexo;
+    // const SIP_PASS = anexo;
+
+    const SIP_EXT = useMemo(() => userLogin?.ANEXO_BACKUP ?? "", [userLogin?.ANEXO_BACKUP]);
+
+    const SIP_PASS = SIP_EXT;
 
     // Host/WS (tal como lo tenías)
     const SIP_HOST = "cycwebcobperu.net:8443";
@@ -244,7 +255,7 @@ export const SIPProvider = ({ children }) => {
 
         setModalVisible(false);
 
-        notify?.({ severity: "warn", summary: "Llamada", detail: "Finalizada al cerrar el panel" });
+        // notify?.({ severity: "warn", summary: "Llamada", detail: "Finalizada al cerrar el panel" });
     }, [resetPhoneUI, notify]);
 
     const startLatencyTest = useCallback(() => {
@@ -543,7 +554,8 @@ export const SIPProvider = ({ children }) => {
             }
             setDialNumber(num);
             setSelectedPhone(num);
-            panelContext.setSelectedPhone(num);
+            // panelContext.setSelectedPhone(num);
+            setPanelSelectedPhone?.(num);
 
             setFormNewGestionRTC(true);
             setFormGestionType(1);
@@ -553,7 +565,8 @@ export const SIPProvider = ({ children }) => {
             showPhone();
             // Si quisieras llamar directo: call(num);
         },
-        [notify, panelContext]
+        // [notify, panelContext]
+        [notify, setPanelSelectedPhone, showPhone]
     );
 
     /* ===== Init / cleanup ===== */
@@ -589,7 +602,9 @@ export const SIPProvider = ({ children }) => {
                 });
                 uaRef.current = ua;
 
-                setWho(String(panelContext?.userLogin?.NOMBRES ? `${panelContext.userLogin.NOMBRES} ${panelContext.userLogin.APELLIDOS ?? ""}`.trim() : `Ext ${SIP_EXT}`));
+                // setWho(String(panelContext?.userLogin?.NOMBRES ? `${panelContext.userLogin.NOMBRES} ${panelContext.userLogin.APELLIDOS ?? ""}`.trim() : `Ext ${SIP_EXT}`));
+                setWho(String(userLogin?.NOMBRES ? `${userLogin.NOMBRES} ${userLogin.APELLIDOS ?? ""}`.trim() : `Ext ${SIP_EXT}`));
+                // setAnn(`Anexo: ${SIP_EXT} @ ${SIP_HOST}`);
                 setAnn(`Anexo: ${SIP_EXT} @ ${SIP_HOST}`);
 
                 ua.start();
@@ -621,7 +636,6 @@ export const SIPProvider = ({ children }) => {
                     const s = data.session;
                     sessionRef.current = s;
                     if (s.direction === "incoming") {
-                        // Auto-answer; si prefieres confirmar, reemplaza estas dos líneas
                         s.answer(callOptions());
                         attach(s, false, 1);
                     }
@@ -651,7 +665,8 @@ export const SIPProvider = ({ children }) => {
             } catch {}
             mounted = false;
         };
-    }, [WS_URL, SIP_EXT, SIP_PASS, SIP_HOST, panelContext, startLatencyTest, stopLatencyTest, callOptions, attach, notify, setBadge, stopLiveTimer]);
+        // }, [WS_URL, SIP_EXT, SIP_PASS, SIP_HOST, panelContext, startLatencyTest, stopLatencyTest, callOptions, attach, notify, setBadge, stopLiveTimer]);
+    }, [WS_URL, SIP_EXT, SIP_PASS, SIP_HOST, startLatencyTest, stopLatencyTest, callOptions, attach, notify, setBadge, stopLiveTimer]);
 
     /* ===== Value expuesto ===== */
     const value = useMemo(

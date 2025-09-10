@@ -1,10 +1,10 @@
+// Librerias
 const express = require("express");
 const cors = require("cors");
-const fs = require("fs");
 const path = require("path");
-const compression = require("compression");
-const helmet = require("helmet");
+const fs = require("fs");
 
+// Rutas de la aplicacion
 const { authRoutes } = require("./Routes/auth.routes");
 const { gestionRoutes } = require("./Routes/gestion.routes");
 const { accionRoutes } = require("./Routes/accion.routes");
@@ -15,72 +15,55 @@ const { motivoRoutes } = require("./Routes/motivo.routes");
 const { tiendaAvRoutes } = require("./Routes/tiendaAv.routes");
 const { telefonosRoutes } = require("./Routes/telefonos.routes");
 const { judicialRoutes } = require("./Routes/judicial.routes");
+// const { renderRoutes } = require("./Routes/render.routes");
 
 const app = express();
 
-app.set("trust proxy", true);
+const corsOptions = {
+  origin: "*",
+  methods: "GET, POST, PUT, DELETE, OPTIONS",
+  allowedHeaders: "Content-Type, Authorization, api_token",
+  credentials: true,
+};
 
-// CORS
-const allowed = (process.env.CORS_ORIGINS || "*")
-  .split(",")
-  .map((s) => s.trim());
+app.use(cors(corsOptions));
 
-app.use(
-  cors({
-    origin: (origin, cb) => {
-      if (!origin || allowed.includes("*") || allowed.includes(origin))
-        cb(null, true);
-      else cb(new Error("CORS bloqueado"));
-    },
-    methods: "GET,POST,PUT,DELETE,OPTIONS",
-    allowedHeaders: "Content-Type, Authorization, api_token",
-    credentials: true,
-  })
-);
-
-app.use(
-  helmet({
-    contentSecurityPolicy: false,
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-  })
-);
-
-app.use(compression());
-
-app.use(express.json({ limit: "1mb" }));
-
-app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+app.use(express.json());
 
 const isProduction = process.env.NODE_ENV === "production";
 
+// Ruta base según entorno
 const baseAdjuntosPath = isProduction
   ? path.join(__dirname, "backend", "Adjuntos")
   : path.join(__dirname, "Adjuntos");
 
-app.use(
-  "/Adjuntos",
-  express.static(baseAdjuntosPath, { maxAge: "1h", etag: true })
-);
+// Servir archivos estaticos
+app.use("/Adjuntos", express.static(baseAdjuntosPath));
 
+// Descargar archivos
 app.get("/download/*", (req, res) => {
-  const relativePath = decodeURIComponent(req.params[0] || "");
+  const relativePath = decodeURIComponent(req.params[0]);
   const filePath = path.join(baseAdjuntosPath, relativePath);
-  if (!filePath.startsWith(baseAdjuntosPath))
-    return res.status(400).send("Ruta inválida");
-  if (!fs.existsSync(filePath))
+
+  // Existe?
+  if (!fs.existsSync(filePath)) {
+    console.error("Archivo no encontrado:", filePath);
     return res.status(404).send("Archivo no encontrado");
+  }
+
   res.download(filePath, (err) => {
     if (err) {
       console.error("Error al descargar el archivo:", err);
-      res.status(500).send("Error al descargar el archivo");
+      return res.status(500).send("Error al descargar el archivo");
     }
   });
 });
 
-app.use(
-  "/assets",
-  express.static(path.join(__dirname, "assets"), { maxAge: "5m", etag: true })
-);
+// Servimos los json dentro de la capeta assets
+app.use("/assets", express.static(path.join(__dirname, "assets")));
+
+// Servimos el build de produccion
+app.use(express.static(path.join(__dirname, "build")));
 
 // Login
 app.use("/", authRoutes);
@@ -112,6 +95,13 @@ app.use("/telefono", telefonosRoutes);
 // Judicial
 app.use("/judicial", judicialRoutes);
 
-app.get("/health", (_req, res) => res.json({ ok: true }));
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(__dirname, "build", "index.html"), (err) => {
+    if (err) {
+      console.error("Error al servir index.html:", err);
+      res.status(404).send("Frontend no encontrado");
+    }
+  });
+});
 
 module.exports = { app };

@@ -1,0 +1,45 @@
+services:
+  web2:
+    build: ./Server
+    container_name: cycweb-rtc-web
+    restart: unless-stopped
+    environment:
+      - DOMAIN=cycwebcobperu.net
+      - API_TARGET=http://rtc_api:3001
+    depends_on:
+      - rtc_api
+    ports:
+      - "8080:8080"
+      - "444:444"
+    volumes:
+      - /srv/apps/CyC-GeoCampo/certbot/conf:/etc/letsencrypt:ro
+      - /srv/apps/CyC-GeoCampo/certbot/www:/var/www/certbot:ro
+
+  rtc_api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cycweb-rtc-api
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env.production
+    volumes:
+      - ./backend/assets:/app/assets
+      - ./backend/Adjuntos:/app/Adjuntos
+      - frontend-build:/app/build
+    expose:
+      - "3001"
+
+  react_build:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cycweb-rtc-frontend
+    env_file:
+      - ./frontend/.env.production
+    volumes:
+      - frontend-build:/app/build
+    command: ["sh", "-c", "echo 'build listo'"]
+
+volumes:
+  frontend-build:

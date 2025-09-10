@@ -10,22 +10,16 @@ const db = new Sequelize({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   logging: false,
-  define: {
-    timestamps: false,
+  define: { timestamps: false },
+  pool: {
+    max: parseInt(process.env.DB_POOL_MAX || "8", 10),
+    min: parseInt(process.env.DB_POOL_MIN || "2", 10),
+    acquire: parseInt(process.env.DB_POOL_ACQUIRE || "8000", 10),
+    idle: parseInt(process.env.DB_POOL_IDLE || "10000", 10),
+    evict: 1000,
   },
+  retry: { max: parseInt(process.env.DB_RETRY_MAX || "2", 10) },
+  dialectOptions: {},
 });
-
-// const db = new Sequelize({
-//   dialect: "mysql",
-//   host: process.env.DB_HOST,
-//   port: process.env.DB_PORT_MYSQL || 3306,
-//   username: process.env.DB_USER,
-//   password: process.env.DB_PASSWORD,
-//   database: process.env.DB_NAME,
-//   logging: false,
-//   define: {
-//     timestamps: false,
-//   },
-// });
 
 module.exports = { db };

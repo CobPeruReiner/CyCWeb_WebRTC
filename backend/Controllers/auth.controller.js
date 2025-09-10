@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const moment = require("moment");
-const { db } = require("../config/database");
+const { db } = require("../config/database_v1");
 const dotenv = require("dotenv");
 const { QueryTypes } = require("sequelize");
 const md5 = require("md5");

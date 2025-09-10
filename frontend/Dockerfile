@@ -1,20 +1,30 @@
 FROM node:20-alpine AS builder
-
 WORKDIR /app
-
 COPY package*.json ./
-
 RUN npm ci
-
 COPY . .
-
 RUN npm run build
 
+FROM nginx:1.27-alpine
+COPY --from=builder /app/build /usr/share/nginx/html
+COPY <<'NGINX' /etc/nginx/conf.d/default.conf
+server {
+  listen 80;
+  server_name _;
 
-FROM alpine:3.19
+  location ~* \.(js|css|png|jpg|jpeg|gif|svg|woff2?)$ {
+    root /usr/share/nginx/html;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+    try_files $uri =404;
+  }
 
-WORKDIR /app
+  location / {
+    root /usr/share/nginx/html;
+    try_files $uri /index.html;
+  }
+}
+NGINX
+EXPOSE 80
 
-COPY --from=builder /app/build ./build
-
-CMD ["sh", "-c", "ls -la /app/build && echo 'Build de React listo'"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget -qO- http://127.0.0.1/ || exit 1

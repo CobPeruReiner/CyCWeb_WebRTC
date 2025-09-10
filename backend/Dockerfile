@@ -1,17 +1,24 @@
 FROM node:20-alpine
 
+# Usuario no-root
+RUN addgroup -S app && adduser -S app -G app
 WORKDIR /app
 
-COPY package*.json ./
+ENV NODE_ENV=production
+ENV PORT=3001
 
+COPY package*.json ./
 RUN npm ci --omit=dev
 
 COPY . .
 
-ENV NODE_ENV=production
+# PM2 para cluster de 2 workers (2 vCPU)
+RUN npm i -g pm2
 
-ENV PORT=3001
-
+USER app
 EXPOSE 3001
 
-CMD ["node", "server.js"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3001/health || exit 1
+
+CMD ["pm2-runtime","server.js","-i","2"]
