@@ -3670,9 +3670,9 @@ export const PanelGestion = (props) => {
                             <div className="p-col-4">
                                 <Card title="SCORE DE TELEFONOS" style={{ background: "#f8f9fa", position: "relative" }}>
                                     {/* Boton Telefono */}
-                                    <div style={{ position: "absolute", top: "2px", right: "10px" }}>
+                                    {/* <div style={{ position: "absolute", top: "2px", right: "10px" }}>
                                         <Button icon="pi pi-phone" className="p-button-rounded p-button-text" onClick={() => showPhone()} />
-                                    </div>
+                                    </div> */}
 
                                     {panelContext.selectedCustomer && (
                                         <React.Fragment>
