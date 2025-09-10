@@ -1,12 +1,25 @@
 FROM node:20-alpine AS builder
+
 WORKDIR /app
+
 COPY package*.json ./
+
 RUN npm ci
+
+ARG REACT_APP_ROUTE_API
+ARG REACT_APP_ROUTE_BASE
+ARG REACT_APP_ROUTE_IMAGE
+ENV REACT_APP_ROUTE_API=${REACT_APP_ROUTE_API}
+ENV REACT_APP_ROUTE_BASE=${REACT_APP_ROUTE_BASE}
+ENV REACT_APP_ROUTE_IMAGE=${REACT_APP_ROUTE_IMAGE}
+
 COPY . .
 RUN npm run build
 
 FROM nginx:1.27-alpine
+
 COPY --from=builder /app/build /usr/share/nginx/html
+
 COPY <<'NGINX' /etc/nginx/conf.d/default.conf
 server {
   listen 80;
