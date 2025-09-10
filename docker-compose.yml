@@ -5,6 +5,7 @@ networks:
 
 services:
   web2:
+    user: "0:0"
     build: ./Server
     container_name: cycweb-rtc-web
     restart: unless-stopped
