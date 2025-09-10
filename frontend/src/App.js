@@ -76,9 +76,13 @@ const App = () => {
                     _menu.push({
                         label: element.nombre,
                         command: () => {
+                            // debugger
+                            console.log("element", element);
+
                             panelContext.setSelectedEntityId(element.id_tabla);
                             panelContext.setSelectedCarteraId(element.idcartera);
-                            window.location = "#/admin/gestion/" + element.id_tabla;
+                            // window.location = "#/admin/gestion/" + element.id_tabla;
+                            history.push(`/admin/gestion/${element.id_tabla}`);
                         },
                     });
                 });
@@ -92,7 +96,12 @@ const App = () => {
                     command: () => {
                         panelContext.setSelectedEntityId(element.id_tabla);
                         panelContext.setSelectedCarteraId(element.idcartera);
-                        window.location = "#/admin/gestion/" + element.id_tabla;
+                        // window.location = "#/admin/gestion/" + element.id_tabla;
+
+                        // debugger
+                        console.log("element 2: ", element);
+
+                        history.push(`/admin/gestion/${element.id_tabla}`);
                     },
                 });
             });
