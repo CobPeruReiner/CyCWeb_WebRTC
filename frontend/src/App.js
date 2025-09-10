@@ -61,12 +61,14 @@ const App = () => {
                 userLoginSession = localStorageService.getUserLogin();
             } catch (Exception) {
                 console.log("exception", Exception);
-                history.replace(base);
+                console.log("Error al obtener userLoginSession");
+                history.replace("/");
             }
             //console.log('userLoginSession',userLoginSession);
 
             if (userLoginSession == null) {
-                history.replace(base);
+                console.log("No hay usuario");
+                history.replace("/");
             } else {
                 panelContext.setUserLogin(userLoginSession);
 

@@ -30,8 +30,8 @@ export const AppTopbar = (props) => {
                         panelContext.setSelectedEntityId(null);
 
                         // Redirigir
-                        const base = (process.env.REACT_APP_ROUTE_BASE || "/").replace(/^\/#$/, "/");
-                        history.replace(base);
+                        console.log("Cerrando sesión");
+                        history.replace("/");
                     },
                 },
             ],
