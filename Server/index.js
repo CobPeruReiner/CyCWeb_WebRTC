@@ -8,8 +8,10 @@ const { createProxyMiddleware } = require("http-proxy-middleware");
 const app = express();
 app.set("trust proxy", true);
 
+// —— Health (primero, para healthchecks)
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
+// —— Forzar HTTPS a :444 (si llega por HTTP)
 app.use((req, res, next) => {
   if (req.path.startsWith("/.well-known/acme-challenge")) return next();
   const isHttps = req.secure || req.headers["x-forwarded-proto"] === "https";
@@ -24,45 +26,78 @@ app.use((req, res, next) => {
   next();
 });
 
+// —— ACME para certbot
 const ACME_ROOT = "/var/www/certbot";
 app.use("/.well-known", express.static(path.join(ACME_ROOT, ".well-known")));
 
+// —— Proxies (crear UNA sola instancia por destino)
+const FRONTEND_TARGET = process.env.FRONTEND_TARGET || "http://frontend:80";
 const API_TARGET = process.env.API_TARGET || "http://rtc_api:3001";
 
-app.use((req, res, next) => {
-  if (req.path.startsWith("/.well-known")) return next();
-  if (req.path === "/health") return next();
-  return createProxyMiddleware({
-    target: API_TARGET,
-    changeOrigin: true,
-    ws: true,
-    autoRewrite: true,
-    logLevel: "info",
-    proxyTimeout: 15000,
-    timeout: 15000,
-    onError(err, _req, res) {
-      console.error("Proxy error:", err.code || err.message);
-      if (!res.headersSent) res.writeHead(502);
-      res.end("Bad gateway");
-    },
-  })(req, res, next);
+const apiProxy = createProxyMiddleware({
+  target: API_TARGET,
+  changeOrigin: true,
+  ws: true,
+  autoRewrite: true,
+  pathRewrite: { "^/api": "" }, // /api/foo -> /foo en la API
+  logLevel: "info",
+  proxyTimeout: 15000,
+  timeout: 15000,
 });
 
+const spaProxy = createProxyMiddleware({
+  target: FRONTEND_TARGET,
+  changeOrigin: true,
+  autoRewrite: true,
+  logLevel: "info",
+  proxyTimeout: 15000,
+  timeout: 15000,
+});
+
+// —— Ruteo: API bajo /api, resto => frontend
+app.use("/api", apiProxy);
+
+app.use((req, res, next) => {
+  if (req.path.startsWith("/.well-known") || req.path === "/health")
+    return next();
+  return spaProxy(req, res, next);
+});
+
+// —— Servidor HTTP
 const httpServer = http.createServer(app);
 httpServer.keepAliveTimeout = 65000;
 httpServer.headersTimeout = 66000;
+// Soporte WS sobre HTTP (si la API usa websockets)
+httpServer.on("upgrade", (req, socket, head) => {
+  // Solo proxea upgrades destinados al API (/api)
+  if (req.url && req.url.startsWith("/api")) {
+    apiProxy.upgrade(req, socket, head);
+  } else {
+    socket.destroy();
+  }
+});
 httpServer.listen(8080, "0.0.0.0", () => console.log("HTTP listo en :8080"));
 
+// —— Servidor HTTPS (si hay certs)
 const DOMAIN = process.env.DOMAIN || "cycwebcobperu.net";
 const LIVE_DIR = `/etc/letsencrypt/live/${DOMAIN}`;
 const KEY = path.join(LIVE_DIR, "privkey.pem");
 const CERT = path.join(LIVE_DIR, "fullchain.pem");
 
+let httpsServer;
 if (fs.existsSync(KEY) && fs.existsSync(CERT)) {
   const options = { key: fs.readFileSync(KEY), cert: fs.readFileSync(CERT) };
-  const httpsServer = https.createServer(options, app);
+  httpsServer = https.createServer(options, app);
   httpsServer.keepAliveTimeout = 65000;
   httpsServer.headersTimeout = 66000;
+  // WS también en HTTPS
+  httpsServer.on("upgrade", (req, socket, head) => {
+    if (req.url && req.url.startsWith("/api")) {
+      apiProxy.upgrade(req, socket, head);
+    } else {
+      socket.destroy();
+    }
+  });
   httpsServer.listen(444, "0.0.0.0", () =>
     console.log(`HTTPS listo en :444 para ${DOMAIN}`)
   );
@@ -70,6 +105,7 @@ if (fs.existsSync(KEY) && fs.existsSync(CERT)) {
   console.warn("⚠️ Certificados no encontrados en", LIVE_DIR);
 }
 
+// —— Cierre elegante
 process.on("SIGTERM", () => {
   console.log("SIGTERM recibido, cerrando Server...");
   httpServer.close(() => process.exit(0));
