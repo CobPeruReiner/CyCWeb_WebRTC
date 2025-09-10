@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
 import classNames from "classnames";
-import { Route, Switch, useParams } from "react-router-dom";
+import { Route, Switch, useHistory } from "react-router-dom";
 import { CSSTransition } from "react-transition-group";
 import { AppTopbar } from "./AppTopbar";
 import { AppMenu } from "./AppMenu";
@@ -48,6 +48,9 @@ const App = () => {
         }
     }, [mobileMenuActive]);
 
+    let history = useHistory();
+    const base = (process.env.REACT_APP_ROUTE_BASE || "/").replace(/^\/#$/, "/");
+
     useEffect(() => {
         let _menu = [];
         // console.log("panelContext", panelContext);
@@ -58,12 +61,12 @@ const App = () => {
                 userLoginSession = localStorageService.getUserLogin();
             } catch (Exception) {
                 console.log("exception", Exception);
-                window.location = process.env.REACT_APP_ROUTE_BASE;
+                history.replace(base);
             }
             //console.log('userLoginSession',userLoginSession);
 
             if (userLoginSession == null) {
-                window.location = process.env.REACT_APP_ROUTE_BASE;
+                history.replace(base);
             } else {
                 panelContext.setUserLogin(userLoginSession);
 

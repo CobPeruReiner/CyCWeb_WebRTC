@@ -28,7 +28,10 @@ export const AppTopbar = (props) => {
                         localStorageService.clearToken();
                         panelContext.setUserLogin(null);
                         panelContext.setSelectedEntityId(null);
-                        history.push(process.env.REACT_APP_ROUTE_BASE);
+
+                        // Redirigir
+                        const base = (process.env.REACT_APP_ROUTE_BASE || "/").replace(/^\/#$/, "/");
+                        history.replace(base);
                     },
                 },
             ],
