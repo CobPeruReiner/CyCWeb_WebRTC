@@ -563,7 +563,8 @@ export const SIPProvider = ({ children }) => {
             setDialogGestion(true);
 
             showPhone();
-            // Si quisieras llamar directo: call(num);
+            // Si quisieras llamar directo:
+            call(num);
         },
         // [notify, panelContext]
         [notify, setPanelSelectedPhone, showPhone]
