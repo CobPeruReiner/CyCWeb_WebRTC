@@ -39,7 +39,10 @@ const apiProxy = createProxyMiddleware({
   changeOrigin: true,
   ws: true,
   autoRewrite: true,
-  pathRewrite: { "^/api": "" }, // /api/foo -> /foo en la API
+  pathRewrite: (path, req) => {
+    if (path.startsWith("/api/socket.io")) return path;
+    return path.replace(/^\/api/, "");
+  },
   logLevel: "info",
   proxyTimeout: 15000,
   timeout: 15000,
