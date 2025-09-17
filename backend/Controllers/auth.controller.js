@@ -8,6 +8,36 @@ const md5 = require("md5");
 
 dotenv.config({ path: "./.env" });
 
+// CAPTCHA
+const verifyCaptcha = async (captchaToken, remoteIp) => {
+  try {
+    const secret = process.env.RECAPTCHA_SECRET_KEY;
+    if (!secret) {
+      console.error("Falta RECAPTCHA_SECRET_KEY en .env del backend");
+      return { success: false, "error-codes": ["missing-secret"] };
+    }
+    if (!captchaToken) {
+      return { success: false, "error-codes": ["missing-input-response"] };
+    }
+
+    const params = new URLSearchParams();
+    params.append("secret", secret);
+    params.append("response", captchaToken);
+    if (remoteIp) params.append("remoteip", remoteIp);
+
+    const r = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
+    });
+    const data = await r.json();
+    return data;
+  } catch (e) {
+    console.error("Error verificando reCAPTCHA:", e);
+    return { success: false, "error-codes": ["verification-failed"] };
+  }
+};
+
 // Helper de notificacion
 const injectNotifier = (fn) => {
   notifyPreviousSession = fn;
@@ -40,24 +70,188 @@ const auth = async (req, res, next) => {
   }
 };
 
+// const Login = async (req, res) => {
+//   const { user, password } = req.body;
+
+//   console.log("================================================");
+//   console.log("Credenciales enviadas: ", user, password);
+
+//   console.time("Login_query_time");
+
+//   if (!user || !password) {
+//     console.timeEnd("Login_query_time");
+
+//     return res
+//       .status(200)
+//       .json({ body: "Usuario o contraseña inválida", status: "1" });
+//   }
+
+//   try {
+//     // Buscar usuario en la BD
+//     const [users] = await db.query(
+//       "SELECT IDPERSONAL, APELLIDOS, NOMBRES, USUARIO, PASSWORD, api_token, ANEXO_BACKUP FROM personal WHERE DOC = :user AND IDESTADO = 1",
+//       {
+//         replacements: { user },
+//         type: QueryTypes.SELECT,
+//       }
+//     );
+
+//     // Depuracion
+//     console.log("Usuario logeado: ", users.NOMBRES, users.APELLIDOS);
+
+//     if (!users || md5(password) !== users.PASSWORD) {
+//       console.timeEnd("Login_query_time");
+
+//       return res
+//         .status(200)
+//         .json({ body: "Usuario o contraseña inválida", status: "1" });
+//     }
+
+//     // Obtener fecha y hora actual
+//     let fechaActual = moment().utc().subtract(5, "hours");
+//     let currentDay = fechaActual.format("dddd");
+
+//     let minTime, maxTime;
+
+//     if (currentDay === "Saturday") {
+//       minTime = moment()
+//         .utc()
+//         .subtract(5, "hours")
+//         .hour(7)
+//         .minute(55)
+//         .second(0);
+//       maxTime = moment()
+//         .utc()
+//         .subtract(5, "hours")
+//         .hour(17)
+//         .minute(30)
+//         .second(0);
+//     } else if (currentDay === "Sunday") {
+//       minTime = moment()
+//         .utc()
+//         .subtract(5, "hours")
+//         .hour(21)
+//         .minute(0)
+//         .second(0);
+//       maxTime = moment()
+//         .utc()
+//         .subtract(5, "hours")
+//         .hour(21)
+//         .minute(1)
+//         .second(0);
+//     } else {
+//       minTime = moment().utc().subtract(5, "hours").hour(7).minute(0).second(0);
+//       maxTime = moment()
+//         .utc()
+//         .subtract(5, "hours")
+//         .hour(19)
+//         .minute(55)
+//         .second(0);
+//     }
+
+//     let currentTime = moment().utc().subtract(5, "hours");
+
+//     if (currentTime.isBetween(minTime, maxTime)) {
+//       // Generar token
+//       const api_token = jwt.sign(
+//         { id: users.IDPERSONAL },
+//         process.env.JWT_SECRET,
+//         { expiresIn: "15m" }
+//       );
+
+//       // Guardar token en la BD
+//       await db.query(
+//         "UPDATE personal SET api_token = :api_token WHERE IDPERSONAL = :IDPERSONAL",
+//         {
+//           replacements: { api_token, IDPERSONAL: users.IDPERSONAL },
+//           type: QueryTypes.UPDATE,
+//         }
+//       );
+
+//       // Notificamos
+//       notifyPreviousSession?.(users.IDPERSONAL);
+
+//       // Obtener clientes del usuario (asumiendo que la relación está en otra tabla)
+//       const clients = await db.query(
+//         `
+//             SELECT
+//                 cartera.cartera AS nombre,
+//                 tabla_log.id AS id_tabla,
+//                 tabla_log.id_cartera AS idcartera
+//             FROM tabla_log
+//             INNER JOIN asignacion_tabla ON tabla_log.id = asignacion_tabla.id_tabla
+//             INNER JOIN cartera ON tabla_log.id_cartera = cartera.id
+//             INNER JOIN cliente ON cartera.idcliente = cliente.id
+//             WHERE asignacion_tabla.id_usuario = :IDPERSONAL
+//             AND tabla_log.estado = 0
+//         `,
+//         {
+//           replacements: { IDPERSONAL: users.IDPERSONAL },
+//           type: QueryTypes.SELECT,
+//         }
+//       );
+
+//       users.clients = clients;
+
+//       console.timeEnd("Login_query_time");
+
+//       return res.status(200).json({
+//         body: {
+//           ...users,
+//           api_token,
+//         },
+//         status: "0",
+//       });
+//     }
+
+//     console.timeEnd("Login_query_time");
+
+//     return res.status(200).json({
+//       body: "Acceso bloqueado, fuera de horario",
+//       status: "2",
+//       minTime: minTime.format("YYYY-MM-DD HH:mm:ss"),
+//       maxTime: maxTime.format("YYYY-MM-DD HH:mm:ss"),
+//       currentTime: currentTime.format("YYYY-MM-DD HH:mm:ss"),
+//       fechaActual: fechaActual.format("YYYY-MM-DD HH:mm:ss"),
+//       currentDay,
+//     });
+//   } catch (error) {
+//     console.timeEnd("Login_query_time");
+
+//     res
+//       .status(500)
+//       .json({ error: "Error en el login", detalle: error.message });
+//   }
+// };
+
 const Login = async (req, res) => {
-  const { user, password } = req.body;
+  // AHORA esperamos también captchaToken en el body
+  const { user, password, captchaToken } = req.body;
 
   console.log("================================================");
-  console.log("Credenciales enviadas: ", user, password);
+  console.log("Credenciales enviadas: ", user, "********");
 
   console.time("Login_query_time");
 
+  // 0) Validaciones mínimas
   if (!user || !password) {
     console.timeEnd("Login_query_time");
-
     return res
       .status(200)
       .json({ body: "Usuario o contraseña inválida", status: "1" });
   }
 
+  // 1) VERIFICAR CAPTCHA ANTES DE CUALQUIER COSA
+  const captcha = await verifyCaptcha(captchaToken, req.ip);
+  if (!captcha?.success) {
+    console.timeEnd("Login_query_time");
+    // Opcional: log detallado
+    console.warn("Captcha inválido:", captcha && captcha["error-codes"]);
+    return res.status(200).json({ body: "Captcha inválido", status: "1" });
+  }
+
   try {
-    // Buscar usuario en la BD
+    // 2) Buscar usuario en la BD
     const [users] = await db.query(
       "SELECT IDPERSONAL, APELLIDOS, NOMBRES, USUARIO, PASSWORD, api_token, ANEXO_BACKUP FROM personal WHERE DOC = :user AND IDESTADO = 1",
       {
@@ -66,23 +260,25 @@ const Login = async (req, res) => {
       }
     );
 
-    // Depuracion
-    console.log("Usuario logeado: ", users.NOMBRES, users.APELLIDOS);
+    // Depuracion segura (evitar imprimir password real)
+    console.log(
+      "Usuario encontrado:",
+      users && users.NOMBRES,
+      users && users.APELLIDOS
+    );
 
     if (!users || md5(password) !== users.PASSWORD) {
       console.timeEnd("Login_query_time");
-
       return res
         .status(200)
         .json({ body: "Usuario o contraseña inválida", status: "1" });
     }
 
-    // Obtener fecha y hora actual
+    // 3) Obtener fecha y hora actual (Lima UTC-5)
     let fechaActual = moment().utc().subtract(5, "hours");
     let currentDay = fechaActual.format("dddd");
 
     let minTime, maxTime;
-
     if (currentDay === "Saturday") {
       minTime = moment()
         .utc()
@@ -122,14 +318,14 @@ const Login = async (req, res) => {
     let currentTime = moment().utc().subtract(5, "hours");
 
     if (currentTime.isBetween(minTime, maxTime)) {
-      // Generar token
+      // 4) Generar token
       const api_token = jwt.sign(
         { id: users.IDPERSONAL },
         process.env.JWT_SECRET,
         { expiresIn: "15m" }
       );
 
-      // Guardar token en la BD
+      // 5) Guardar token en la BD
       await db.query(
         "UPDATE personal SET api_token = :api_token WHERE IDPERSONAL = :IDPERSONAL",
         {
@@ -138,22 +334,22 @@ const Login = async (req, res) => {
         }
       );
 
-      // Notificamos
+      // 6) Notificar sesión previa si aplica
       notifyPreviousSession?.(users.IDPERSONAL);
 
-      // Obtener clientes del usuario (asumiendo que la relación está en otra tabla)
+      // 7) Obtener clientes del usuario
       const clients = await db.query(
         `
-            SELECT 
-                cartera.cartera AS nombre,
-                tabla_log.id AS id_tabla,
-                tabla_log.id_cartera AS idcartera
-            FROM tabla_log
-            INNER JOIN asignacion_tabla ON tabla_log.id = asignacion_tabla.id_tabla
-            INNER JOIN cartera ON tabla_log.id_cartera = cartera.id
-            INNER JOIN cliente ON cartera.idcliente = cliente.id
-            WHERE asignacion_tabla.id_usuario = :IDPERSONAL
-            AND tabla_log.estado = 0
+          SELECT 
+              cartera.cartera AS nombre,
+              tabla_log.id AS id_tabla,
+              tabla_log.id_cartera AS idcartera
+          FROM tabla_log
+          INNER JOIN asignacion_tabla ON tabla_log.id = asignacion_tabla.id_tabla
+          INNER JOIN cartera ON tabla_log.id_cartera = cartera.id
+          INNER JOIN cliente ON cartera.idcliente = cliente.id
+          WHERE asignacion_tabla.id_usuario = :IDPERSONAL
+          AND tabla_log.estado = 0
         `,
         {
           replacements: { IDPERSONAL: users.IDPERSONAL },
@@ -166,10 +362,7 @@ const Login = async (req, res) => {
       console.timeEnd("Login_query_time");
 
       return res.status(200).json({
-        body: {
-          ...users,
-          api_token,
-        },
+        body: { ...users, api_token },
         status: "0",
       });
     }
@@ -187,7 +380,7 @@ const Login = async (req, res) => {
     });
   } catch (error) {
     console.timeEnd("Login_query_time");
-
+    console.error("Error en Login:", error);
     res
       .status(500)
       .json({ error: "Error en el login", detalle: error.message });

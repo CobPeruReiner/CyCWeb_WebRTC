@@ -1,4 +1,5 @@
-import { useState, useEffect, useContext, useRef } from "react";
+/* eslint-disable eqeqeq */
+import { useState, useEffect, useContext, useRef, useCallback } from "react";
 // import classNames from "classnames";
 
 import { useHistory } from "react-router-dom";
@@ -22,142 +23,30 @@ import { LocalStorageService } from "./service/LocalStorageService";
 import PanelContext from "./context/Panel/PanelContext";
 import { Password } from "primereact/password";
 import { Toast } from "primereact/toast";
+import ReCAPTCHA from "react-google-recaptcha";
+
+const BODY_CLASS = "body-overflow-hidden-login";
+const SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
 
 const AppLogin = () => {
     const toast = useRef(null);
+    const captchaRef = useRef(null);
 
     const history = useHistory();
-    // const [layoutMode, setLayoutMode] = useState("static");
-    // const [layoutColorMode, setLayoutColorMode] = useState("dark");
-    // const [staticMenuInactive, setStaticMenuInactive] = useState(false);
-    // const [overlayMenuActive, setOverlayMenuActive] = useState(false);
-    const [mobileMenuActive] = useState(false);
-    // const [inputStyle, setInputStyle] = useState("outlined");
-    // const [ripple, setRipple] = useState(false);
-    // const [showRegister, setShowRegister] = useState(false);
-    // const sidebar = useRef();
-
-    const [mensaje, setMensaje] = useState(null);
-    // let menuClick = false;
     const panelContext = useContext(PanelContext);
 
+    const [mensaje, setMensaje] = useState(null);
     const [login, setLogin] = useState({ user: "", password: "" });
+    const [loading, setLoading] = useState(false);
+    const [captchaToken, setCaptchaToken] = useState(null);
 
+    // Agrega/quita clase al <body>
     useEffect(() => {
-        addClass(document.body, "body-overflow-hidden-login");
-    }, [mobileMenuActive]);
+        document.body.classList.add(BODY_CLASS);
+        return () => document.body.classList.remove(BODY_CLASS);
+    }, []);
 
-    const handleClick = () => {
-        new LoginService().logIn(login).then((response) => {
-            if (response.status == 0) {
-                let lsService = new LocalStorageService();
-                lsService.setToken(response.body);
-                panelContext.setUserLogin(response.body);
-
-                history.push("/admin/gestion");
-            } else if (response.status == 2) {
-                setMensaje(response.body);
-                console.log(response.minTime);
-                console.log(response.maxTime);
-                console.log(response.currentTime);
-            } else {
-                setMensaje(response.body);
-            }
-        });
-    };
-
-    // const onInputStyleChange = (inputStyle) => {
-    //     setInputStyle(inputStyle);
-    // };
-
-    // const onRipple = (e) => {
-    //     PrimeReact.ripple = e.value;
-    //     setRipple(e.value);
-    // };
-
-    // const onLayoutModeChange = (mode) => {
-    //     setLayoutMode(mode);
-    // };
-
-    // const onColorModeChange = (mode) => {
-    //     setLayoutColorMode(mode);
-    // };
-
-    // const onWrapperClick = (event) => {
-    //     if (!menuClick) {
-    //         setOverlayMenuActive(false);
-    //         setMobileMenuActive(false);
-    //     }
-    //     menuClick = false;
-    // };
-
-    // const onToggleMenu = (event) => {
-    //     menuClick = true;
-
-    //     if (isDesktop()) {
-    //         if (layoutMode === "overlay") {
-    //             setOverlayMenuActive((prevState) => !prevState);
-    //         } else if (layoutMode === "static") {
-    //             setStaticMenuInactive((prevState) => !prevState);
-    //         }
-    //     } else {
-    //         setMobileMenuActive((prevState) => !prevState);
-    //     }
-    //     event.preventDefault();
-    // };
-
-    // const onSidebarClick = () => {
-    //     menuClick = true;
-    // };
-
-    // const onMenuItemClick = (event) => {
-    //     if (!event.item.items) {
-    //         setOverlayMenuActive(false);
-    //         setMobileMenuActive(false);
-    //     }
-    // };
-
-    const addClass = (element, className) => {
-        if (element.classList) element.classList.add(className);
-        else element.className += " " + className;
-    };
-
-    // const removeClass = (element, className) => {
-    //     if (element.classList) element.classList.remove(className);
-    //     else element.className = element.className.replace(new RegExp("(^|\\b)" + className.split(" ").join("|") + "(\\b|$)", "gi"), " ");
-    // };
-
-    // const isDesktop = () => {
-    //     return window.innerWidth > 1024;
-    // };
-
-    // const isSidebarVisible = () => {
-    //     if (isDesktop()) {
-    //         if (layoutMode === "static") return !staticMenuInactive;
-    //         else if (layoutMode === "overlay") return overlayMenuActive;
-    //         else return true;
-    //     }
-
-    //     return true;
-    // };
-
-    // const logo = layoutColorMode === "dark" ? "assets/layout/images/logo-white.svg" : "assets/layout/images/logo.svg";
-
-    // const wrapperClass = classNames("layout-wrapper", {
-    //     "layout-overlay": layoutMode === "overlay",
-    //     "layout-static": layoutMode === "static",
-    //     "layout-static-sidebar-inactive": staticMenuInactive && layoutMode === "static",
-    //     "layout-overlay-sidebar-active": overlayMenuActive && layoutMode === "overlay",
-    //     "layout-mobile-sidebar-active": mobileMenuActive,
-    //     "p-input-filled": inputStyle === "filled",
-    //     "p-ripple-disabled": ripple === false,
-    // });
-
-    // const sidebarClassName = classNames("layout-sidebar", {
-    //     "layout-sidebar-dark": layoutColorMode === "dark",
-    //     "layout-sidebar-light": layoutColorMode === "light",
-    // });
-
+    // Mensaje de logout forzado
     useEffect(() => {
         const msg = sessionStorage.getItem("forcedLogoutMsg");
         if (msg) {
@@ -171,6 +60,63 @@ const AppLogin = () => {
         }
     }, []);
 
+    const showToast = useCallback((severity, summary, detail, life = 4000) => {
+        toast.current?.show({ severity, summary, detail, life });
+    }, []);
+
+    const handleCaptchaChange = (token) => setCaptchaToken(token || null);
+    const resetCaptcha = () => {
+        setCaptchaToken(null);
+        captchaRef.current?.reset();
+    };
+
+    const credencialesCompletas = login.user.trim() && login.password.trim();
+    const puedeEnviar = !!credencialesCompletas && !!captchaToken && !loading;
+
+    const handleClick = async () => {
+        setMensaje(null);
+
+        if (!credencialesCompletas) {
+            setMensaje("Ingresa usuario y contraseña.");
+            return;
+        }
+        if (!captchaToken) {
+            setMensaje("Por favor, marca el reCAPTCHA.");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const response = await new LoginService().logIn({ ...login, captchaToken });
+
+            console.log("Respuesta: ", response);
+
+            if (response.status == 0) {
+                const lsService = new LocalStorageService();
+                lsService.setToken(response.body);
+                panelContext.setUserLogin(response.body);
+                showToast("success", "Bienvenido", "Autenticación exitosa.", 1500);
+                history.push("/admin/gestion");
+            } else if (response.status == 2) {
+                setMensaje(response.body);
+                resetCaptcha();
+            } else {
+                setMensaje(response.body ?? "No se pudo iniciar sesión.");
+                resetCaptcha();
+            }
+        } catch (e) {
+            console.error(e);
+            setMensaje("Error de red. Intenta nuevamente.");
+            resetCaptcha();
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const onKeyDown = (e) => {
+        if (e.key === "Enter" && puedeEnviar) handleClick();
+    };
+
     return (
         <>
             <Toast ref={toast} />
@@ -179,6 +125,7 @@ const AppLogin = () => {
                     <div className="login100-form-title" style={{ backgroundImage: "url(assets/layout/images/bg-01.png)" }}>
                         <span className="login100-form-title-1"></span>
                     </div>
+
                     <div className="p-d-flex">
                         <div className="p-mt-5 p-ml-5">
                             <img alt="Logo" height="50" src="assets/layout/images/logo.png" />
@@ -191,36 +138,46 @@ const AppLogin = () => {
                     </div>
 
                     <Divider />
+
                     <div className="p-fluid p-p-6">
                         <div className="p-field p-grid">
-                            <label htmlFor="firstname4" className="p-col-12 p-md-2">
+                            <label htmlFor="user" className="p-col-12 p-md-2">
                                 Usuario
                             </label>
                             <div className="p-col-12 p-md-10">
-                                <InputText id="firstname4" onChange={(e) => setLogin({ ...login, user: e.target.value })} type="text" />
+                                <InputText id="user" value={login.user} onChange={(e) => setLogin({ ...login, user: e.target.value })} onKeyDown={onKeyDown} type="text" autoComplete="username" />
                             </div>
                         </div>
+
                         <div className="p-field p-grid">
-                            <label htmlFor="lastname4" className="p-col-12 p-md-2">
+                            <label htmlFor="password" className="p-col-12 p-md-2">
                                 Password
                             </label>
                             <div className="p-col-12 p-md-10">
-                                <Password onChange={(e) => setLogin({ ...login, password: e.target.value })} feedback={false} />
+                                <Password id="password" value={login.password} onChange={(e) => setLogin({ ...login, password: e.target.value })} feedback={false} inputProps={{ autoComplete: "current-password", onKeyDown }} />
                             </div>
                         </div>
-                        {mensaje && (
+
+                        {typeof mensaje === "string" && mensaje && (
                             <div className="p-field p-grid">
-                                <label htmlFor="lastname4" className="p-col-12 p-md-2"></label>
+                                <label className="p-col-12 p-md-2"></label>
                                 <div className="p-col-12 p-md-10" style={{ color: "red" }}>
                                     {mensaje}
                                 </div>
                             </div>
                         )}
-                        <div className="p-field p-grid"></div>
+
+                        <div className="p-field p-grid">
+                            <label className="p-col-12 p-md-2"></label>
+                            <div className="p-col-12 p-md-10">
+                                <ReCAPTCHA ref={captchaRef} sitekey={SITE_KEY} onChange={handleCaptchaChange} onExpired={resetCaptcha} onErrored={resetCaptcha} hl="es" />
+                            </div>
+                        </div>
+
                         <div className="p-fluid p-formgrid p-grid">
                             <div className="p-field p-col-12 p-md-9"></div>
                             <div className="p-field p-col-12 p-md-3">
-                                <Button label="Iniciar Sesión" icon={"pi pi-send"} onClick={handleClick} className="p-button-rounded p-button-secondary" />
+                                <Button label={loading ? "Verificando..." : "Iniciar Sesión"} icon={"pi pi-send"} onClick={handleClick} className="p-button-rounded p-button-secondary" disabled={!puedeEnviar} loading={loading} />
                             </div>
                         </div>
                     </div>

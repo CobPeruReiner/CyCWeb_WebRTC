@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect, useRef, useContext } from "react";
 import classNames from "classnames";
 import { Route, Switch, useHistory } from "react-router-dom";
@@ -201,6 +203,7 @@ const App = () => {
         "layout-sidebar-dark": layoutColorMode === "dark",
         "layout-sidebar-light": layoutColorMode === "light",
     });
+
     const renderFooter = (name) => {
         return (
             <div>

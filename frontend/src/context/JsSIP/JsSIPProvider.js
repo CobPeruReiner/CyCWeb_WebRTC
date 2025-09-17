@@ -258,22 +258,22 @@ export const SIPProvider = ({ children }) => {
         // notify?.({ severity: "warn", summary: "Llamada", detail: "Finalizada al cerrar el panel" });
     }, [resetPhoneUI, notify]);
 
-    const startLatencyTest = useCallback(() => {
-        if (latencyIntervalRef.current) return;
-        latencyIntervalRef.current = setInterval(async () => {
-            try {
-                latencyAbortRef.current?.abort();
-                const ctrl = new AbortController();
-                latencyAbortRef.current = ctrl;
-                const t0 = Date.now();
-                await fetch(`/api/history?ext=${encodeURIComponent(SIP_EXT)}&limit=1&today=1`, { cache: "no-store", signal: ctrl.signal });
-                const ms = Date.now() - t0;
-                setLatency({ text: `Latencia: ${ms}ms`, cls: ms > 150 ? "text-danger" : ms > 100 ? "text-warning" : "text-success", show: true });
-            } catch (e) {
-                if (e?.name !== "AbortError") setLatency({ text: "Latencia: Error", cls: "text-danger", show: true });
-            }
-        }, 10000);
-    }, [SIP_EXT]);
+    // const startLatencyTest = useCallback(() => {
+    //     if (latencyIntervalRef.current) return;
+    //     latencyIntervalRef.current = setInterval(async () => {
+    //         try {
+    //             latencyAbortRef.current?.abort();
+    //             const ctrl = new AbortController();
+    //             latencyAbortRef.current = ctrl;
+    //             const t0 = Date.now();
+    //             await fetch(`/api/history?ext=${encodeURIComponent(SIP_EXT)}&limit=1&today=1`, { cache: "no-store", signal: ctrl.signal });
+    //             const ms = Date.now() - t0;
+    //             setLatency({ text: `Latencia: ${ms}ms`, cls: ms > 150 ? "text-danger" : ms > 100 ? "text-warning" : "text-success", show: true });
+    //         } catch (e) {
+    //             if (e?.name !== "AbortError") setLatency({ text: "Latencia: Error", cls: "text-danger", show: true });
+    //         }
+    //     }, 10000);
+    // }, [SIP_EXT]);
 
     const stopLatencyTest = useCallback(() => {
         latencyAbortRef.current?.abort();
@@ -619,7 +619,7 @@ export const SIPProvider = ({ children }) => {
                 ua.on("registered", () => {
                     if (!mounted) return;
                     setBadge("Registrado");
-                    startLatencyTest();
+                    // startLatencyTest();
                 });
                 ua.on("unregistered", () => {
                     if (!mounted) return;
@@ -666,8 +666,8 @@ export const SIPProvider = ({ children }) => {
             } catch {}
             mounted = false;
         };
-        // }, [WS_URL, SIP_EXT, SIP_PASS, SIP_HOST, panelContext, startLatencyTest, stopLatencyTest, callOptions, attach, notify, setBadge, stopLiveTimer]);
-    }, [WS_URL, SIP_EXT, SIP_PASS, SIP_HOST, startLatencyTest, stopLatencyTest, callOptions, attach, notify, setBadge, stopLiveTimer]);
+        // }, [WS_URL, SIP_EXT, SIP_PASS, SIP_HOST, startLatencyTest, stopLatencyTest, callOptions, attach, notify, setBadge, stopLiveTimer]);
+    }, [WS_URL, SIP_EXT, SIP_PASS, SIP_HOST, stopLatencyTest, callOptions, attach, notify, setBadge, stopLiveTimer]);
 
     /* ===== Value expuesto ===== */
     const value = useMemo(
