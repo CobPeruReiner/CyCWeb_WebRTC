@@ -9,6 +9,7 @@ import ScrollToTop from "./ScrollToTop";
 import AppLogin from "./AppLogin";
 import PanelState from "./context/Panel/PanelState";
 import { SIPProvider } from "./context/JsSIP/JsSIPProvider";
+import ProtectedSessionGuard from "./service/Protected/ProtectedSessionGuard";
 
 ReactDOM.render(
     <HashRouter>
@@ -16,8 +17,17 @@ ReactDOM.render(
             <Switch>
                 <PanelState>
                     <SIPProvider>
+                        {/* <Route exact path="/" render={(props) => <AppLogin {...props} />} />
+                        <Route path="/admin" render={(props) => <App {...props} />} /> */}
                         <Route exact path="/" render={(props) => <AppLogin {...props} />} />
-                        <Route path="/admin" render={(props) => <App {...props} />} />
+                        <Route
+                            path="/admin"
+                            render={(props) => (
+                                <ProtectedSessionGuard>
+                                    <App {...props} />
+                                </ProtectedSessionGuard>
+                            )}
+                        />
                     </SIPProvider>
                 </PanelState>
             </Switch>

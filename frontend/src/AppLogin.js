@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef } from "react";
 // import classNames from "classnames";
 
 import { useHistory } from "react-router-dom";
@@ -21,11 +21,10 @@ import { LoginService } from "./service/LoginService";
 import { LocalStorageService } from "./service/LocalStorageService";
 import PanelContext from "./context/Panel/PanelContext";
 import { Password } from "primereact/password";
-import { SIPContext } from "./context/JsSIP/JsSIPContext";
 import { Toast } from "primereact/toast";
 
 const AppLogin = () => {
-    const { toastJsIP } = useContext(SIPContext);
+    const toast = useRef(null);
 
     const history = useHistory();
     // const [layoutMode, setLayoutMode] = useState("static");
@@ -159,9 +158,22 @@ const AppLogin = () => {
     //     "layout-sidebar-light": layoutColorMode === "light",
     // });
 
+    useEffect(() => {
+        const msg = sessionStorage.getItem("forcedLogoutMsg");
+        if (msg) {
+            toast.current?.show({
+                severity: "warn",
+                summary: "Sesión finalizada",
+                detail: msg,
+                life: 4000,
+            });
+            sessionStorage.removeItem("forcedLogoutMsg");
+        }
+    }, []);
+
     return (
         <>
-            <Toast ref={toastJsIP} />
+            <Toast ref={toast} />
             <div className="container" id="container" style={{ minHeight: 500 }}>
                 <div className="wrap-login100">
                     <div className="login100-form-title" style={{ backgroundImage: "url(assets/layout/images/bg-01.png)" }}>

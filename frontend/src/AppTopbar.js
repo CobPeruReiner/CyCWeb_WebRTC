@@ -4,6 +4,8 @@ import { LocalStorageService } from "./service/LocalStorageService";
 import PanelContext from "./context/Panel/PanelContext";
 import { useHistory } from "react-router-dom";
 import { SIPContext } from "./context/JsSIP/JsSIPContext";
+import { disconnectSocket } from "./Socket/Socket";
+
 export const AppTopbar = (props) => {
     const panelContext = useContext(PanelContext);
 
@@ -13,6 +15,31 @@ export const AppTopbar = (props) => {
 
     const menu = useRef(null);
 
+    // const items = [
+    //     {
+    //         label: "Opciones",
+    //         items: [
+    //             {
+    //                 label: "Logout",
+    //                 icon: "pi pi-power-off",
+    //                 command: () => {
+    //                     closeSession();
+
+    //                     let localStorageService = new LocalStorageService();
+    //                     sessionStorage.removeItem("usrm");
+    //                     localStorageService.clearToken();
+    //                     panelContext.setUserLogin(null);
+    //                     panelContext.setSelectedEntityId(null);
+
+    //                     // Redirigir
+    //                     console.log("Cerrando sesión");
+    //                     history.replace("/");
+    //                 },
+    //             },
+    //         ],
+    //     },
+    // ];
+
     const items = [
         {
             label: "Opciones",
@@ -21,15 +48,16 @@ export const AppTopbar = (props) => {
                     label: "Logout",
                     icon: "pi pi-power-off",
                     command: () => {
-                        closeSession();
+                        closeSession && closeSession();
 
-                        let localStorageService = new LocalStorageService();
+                        const localStorageService = new LocalStorageService();
                         sessionStorage.removeItem("usrm");
                         localStorageService.clearToken();
                         panelContext.setUserLogin(null);
                         panelContext.setSelectedEntityId(null);
 
-                        // Redirigir
+                        disconnectSocket();
+
                         console.log("Cerrando sesión");
                         history.replace("/");
                     },

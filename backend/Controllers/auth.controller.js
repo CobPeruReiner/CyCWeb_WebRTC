@@ -8,6 +8,38 @@ const md5 = require("md5");
 
 dotenv.config({ path: "./.env" });
 
+// Helper de notificacion
+const injectNotifier = (fn) => {
+  notifyPreviousSession = fn;
+};
+
+// Comparar el token con el que esta en base de datos
+const auth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    if (!token) return res.status(401).json({ message: "No autorizado" });
+
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+
+    const [row] = await db.query(
+      "SELECT api_token FROM SISTEMAGEST.personal WHERE IDPERSONAL = :id LIMIT 1",
+      { replacements: { id: payload.id }, type: QueryTypes.SELECT }
+    );
+
+    if (!row || row.api_token !== token) {
+      return res
+        .status(401)
+        .json({ message: "Sesión inválida (cerrada en otro dispositivo)" });
+    }
+
+    req.user = { id: payload.id };
+    next();
+  } catch (e) {
+    return res.status(401).json({ message: "Token inválido o expirado" });
+  }
+};
+
 const Login = async (req, res) => {
   const { user, password } = req.body;
 
@@ -94,7 +126,7 @@ const Login = async (req, res) => {
       const api_token = jwt.sign(
         { id: users.IDPERSONAL },
         process.env.JWT_SECRET,
-        { expiresIn: "11h" }
+        { expiresIn: "15m" }
       );
 
       // Guardar token en la BD
@@ -105,6 +137,9 @@ const Login = async (req, res) => {
           type: QueryTypes.UPDATE,
         }
       );
+
+      // Notificamos
+      notifyPreviousSession?.(users.IDPERSONAL);
 
       // Obtener clientes del usuario (asumiendo que la relación está en otra tabla)
       const clients = await db.query(
@@ -294,4 +329,11 @@ const GetLastTableId = async (req, res) => {
   }
 };
 
-module.exports = { Login, Logout, ReLogin, GetLastTableId };
+module.exports = {
+  Login,
+  Logout,
+  ReLogin,
+  GetLastTableId,
+  auth,
+  injectNotifier,
+};
