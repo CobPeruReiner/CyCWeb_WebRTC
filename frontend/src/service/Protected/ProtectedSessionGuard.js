@@ -67,12 +67,18 @@ export default function ProtectedSessionGuard({ children }) {
 
         if (msLeft <= 0) {
             sessionStorage.setItem("forcedLogoutMsg", "Tu sesión expiró por inactividad (token vencido).");
+
+            // Cerrar sesion TELEFONITO
             try {
                 closeSession?.();
             } catch {}
+
+            // Cerrar sesion LOCAL
             ls.clearToken();
             panelContext.setUserLogin(null);
             panelContext.setSelectedEntityId?.(null);
+
+            // Desconectamos socket y redirigimos
             disconnectSocket();
             history.replace("/");
             return;

@@ -2,8 +2,8 @@ require("./logger");
 const { app } = require("./app");
 const { db } = require("./config/database");
 
-const { injectNotifier } = require("./Controllers/auth.controller");
 const { initSocket } = require("./Socket/Socket");
+const { injectNotifier } = require("./Utils/Notify");
 
 (async () => {
   try {

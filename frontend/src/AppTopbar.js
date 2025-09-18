@@ -5,6 +5,8 @@ import PanelContext from "./context/Panel/PanelContext";
 import { useHistory } from "react-router-dom";
 import { SIPContext } from "./context/JsSIP/JsSIPContext";
 import { disconnectSocket } from "./Socket/Socket";
+import { LoginService } from "./service/LoginService";
+import moment from "moment";
 
 export const AppTopbar = (props) => {
     const panelContext = useContext(PanelContext);
@@ -15,31 +17,6 @@ export const AppTopbar = (props) => {
 
     const menu = useRef(null);
 
-    // const items = [
-    //     {
-    //         label: "Opciones",
-    //         items: [
-    //             {
-    //                 label: "Logout",
-    //                 icon: "pi pi-power-off",
-    //                 command: () => {
-    //                     closeSession();
-
-    //                     let localStorageService = new LocalStorageService();
-    //                     sessionStorage.removeItem("usrm");
-    //                     localStorageService.clearToken();
-    //                     panelContext.setUserLogin(null);
-    //                     panelContext.setSelectedEntityId(null);
-
-    //                     // Redirigir
-    //                     console.log("Cerrando sesión");
-    //                     history.replace("/");
-    //                 },
-    //             },
-    //         ],
-    //     },
-    // ];
-
     const items = [
         {
             label: "Opciones",
@@ -47,19 +24,28 @@ export const AppTopbar = (props) => {
                 {
                     label: "Logout",
                     icon: "pi pi-power-off",
-                    command: () => {
-                        closeSession && closeSession();
+                    command: async () => {
+                        const localCleanup = () => {
+                            const localStorageService = new LocalStorageService();
+                            sessionStorage.removeItem("usrm");
+                            localStorageService.clearToken();
+                            panelContext.setUserLogin(null);
+                            panelContext.setSelectedEntityId(null);
+                        };
 
-                        const localStorageService = new LocalStorageService();
-                        sessionStorage.removeItem("usrm");
-                        localStorageService.clearToken();
-                        panelContext.setUserLogin(null);
-                        panelContext.setSelectedEntityId(null);
-
-                        disconnectSocket();
-
-                        console.log("Cerrando sesión");
-                        history.replace("/");
+                        // Ahora si ejecutamos el cerrar sesion xd
+                        try {
+                            await new LoginService().logOut({ userId: panelContext.userLogin.IDPERSONAL, dateSolicitud: moment().format("YYYY-MM-DD"), timeSolicitud: moment().format("HH:mm:ss"), user: panelContext.userLogin.USUARIO, password: panelContext.userLogin.PASSWORD });
+                        } catch (e) {
+                            console.error("Fallo en logout del backend:", e);
+                        } finally {
+                            try {
+                                await disconnectSocket?.();
+                            } catch {}
+                            closeSession && closeSession();
+                            localCleanup();
+                            history.replace("/");
+                        }
                     },
                 },
             ],

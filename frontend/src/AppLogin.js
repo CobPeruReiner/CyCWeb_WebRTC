@@ -24,6 +24,7 @@ import PanelContext from "./context/Panel/PanelContext";
 import { Password } from "primereact/password";
 import { Toast } from "primereact/toast";
 import ReCAPTCHA from "react-google-recaptcha";
+import moment from "moment";
 
 const BODY_CLASS = "body-overflow-hidden-login";
 const SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
@@ -40,13 +41,11 @@ const AppLogin = () => {
     const [loading, setLoading] = useState(false);
     const [captchaToken, setCaptchaToken] = useState(null);
 
-    // Agrega/quita clase al <body>
     useEffect(() => {
         document.body.classList.add(BODY_CLASS);
         return () => document.body.classList.remove(BODY_CLASS);
     }, []);
 
-    // Mensaje de logout forzado
     useEffect(() => {
         const msg = sessionStorage.getItem("forcedLogoutMsg");
         if (msg) {
@@ -87,9 +86,9 @@ const AppLogin = () => {
 
         setLoading(true);
         try {
-            const response = await new LoginService().logIn({ ...login, captchaToken });
+            const response = await new LoginService().logIn({ ...login, captchaToken, dateSolicitud: moment().format("YYYY-MM-DD"), timeSolicitud: moment().format("HH:mm:ss") });
 
-            console.log("Respuesta: ", response);
+            // console.log("Respuesta: ", response);
 
             if (response.status == 0) {
                 const lsService = new LocalStorageService();
@@ -154,7 +153,7 @@ const AppLogin = () => {
                                 Password
                             </label>
                             <div className="p-col-12 p-md-10">
-                                <Password id="password" value={login.password} onChange={(e) => setLogin({ ...login, password: e.target.value })} feedback={false} inputProps={{ autoComplete: "current-password", onKeyDown }} />
+                                <Password id="password" value={login.password} onChange={(e) => setLogin({ ...login, password: e.target.value })} feedback={false} inputprops={{ autoComplete: "current-password", onKeyDown }} />
                             </div>
                         </div>
 
@@ -177,7 +176,7 @@ const AppLogin = () => {
                         <div className="p-fluid p-formgrid p-grid">
                             <div className="p-field p-col-12 p-md-9"></div>
                             <div className="p-field p-col-12 p-md-3">
-                                <Button label={loading ? "Verificando..." : "Iniciar Sesión"} icon={"pi pi-send"} onClick={handleClick} className="p-button-rounded p-button-secondary" disabled={!puedeEnviar} loading={loading} />
+                                <Button label={loading ? "Verificando..." : "Iniciar Sesión"} icon={"pi pi-send"} onClick={handleClick} className="p-button-rounded p-button-secondary" disabled={!puedeEnviar} loading={loading ? 1 : 0} />
                             </div>
                         </div>
                     </div>

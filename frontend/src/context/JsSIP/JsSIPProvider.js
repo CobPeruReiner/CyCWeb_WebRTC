@@ -577,7 +577,7 @@ export const SIPProvider = ({ children }) => {
         (async () => {
             try {
                 if (!SIP_EXT || !SIP_PASS) {
-                    console.warn("No hay anexo/cuenta válida.");
+                    // console.warn("No hay anexo/cuenta válida.");
                     return;
                 }
 
