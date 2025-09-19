@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-useless-escape */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import JsSIP from "jssip";
@@ -543,6 +545,7 @@ export const SIPProvider = ({ children }) => {
         notify({ severity: "info", summary: "Sesión", detail: "Cerrada" });
 
         setModalVisible(false);
+        setDialogGestion(false);
     }, [stopLiveTimer, setBadge, notify]);
 
     const showFormNewGestionRTC = useCallback(

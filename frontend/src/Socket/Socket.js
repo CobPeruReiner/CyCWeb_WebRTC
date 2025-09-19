@@ -10,12 +10,6 @@ export function connectSocket(token) {
         } catch (e) {}
     }
 
-    // socket = io(process.env.REACT_APP_ROUTE_API, {
-    //     auth: { token },
-    //     transports: ["websocket"],
-    //     autoConnect: true,
-    // });
-
     socket = io("/", {
         path: "/api/socket.io",
         auth: { token },

@@ -161,7 +161,7 @@ const Login = async (req, res) => {
       const api_token = jwt.sign(
         { id: users.IDPERSONAL },
         process.env.JWT_SECRET,
-        { expiresIn: "15m" }
+        { expiresIn: "11h" }
       );
 
       await db.query(
@@ -260,6 +260,33 @@ const Logout = async (req, res) => {
     console.timeEnd("Logout_query_time");
 
     res.status(500).json({ error: "Error en logout", detalle: error.message });
+  }
+};
+
+const logOutInactividad = async (req, res) => {
+  const userId = req.userId;
+  const { dateSolicitud, timeSolicitud, user, password } = req.body || {};
+
+  try {
+    const now = new Date();
+    const fecha = dateSolicitud || now.toISOString().slice(0, 10);
+    const hora = timeSolicitud || now.toTimeString().slice(0, 8);
+
+    await registrarLogSesion(userId, fecha, hora, 4, user, password);
+
+    await db.query(
+      "UPDATE personal SET api_token = NULL WHERE IDPERSONAL = :id",
+      { replacements: { id: userId }, type: QueryTypes.UPDATE }
+    );
+
+    try {
+      notifyPreviousSession?.(userId);
+    } catch {}
+
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error("logout-inactividad error:", err);
+    return res.status(500).json({ error: "No se pudo cerrar por inactividad" });
   }
 };
 
@@ -372,4 +399,5 @@ module.exports = {
   Logout,
   ReLogin,
   GetLastTableId,
+  logOutInactividad,
 };

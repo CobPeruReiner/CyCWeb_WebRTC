@@ -4,10 +4,6 @@ const { QueryTypes } = require("sequelize");
 const { db } = require("../config/database_v1");
 
 const initSocket = (server) => {
-  // const io = new Server(server, {
-  //   cors: { origin: process.env.CORS_ORIGIN?.split(",") || "*" },
-  // });
-
   const io = new Server(server, {
     path: "/api/socket.io",
     cors: { origin: process.env.CORS_ORIGIN?.split(",") || "*" },

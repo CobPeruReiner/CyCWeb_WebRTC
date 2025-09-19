@@ -101,9 +101,9 @@ const registrarLogSesion = async (
       "CALL SP_INSERTAR_LOG_SESION(:IDPERSONAL, :dateSolicitud, :timeSolicitud, :estado, :DOCUSER, :PASSWORD)",
       {
         replacements: {
-          IDPERSONAL,
-          estado,
-          DOCUSER,
+          IDPERSONAL: IDPERSONAL ?? null,
+          estado: estado ?? null,
+          DOCUSER: DOCUSER ?? null,
           PASSWORD: estado == 2 ? PASSWORD : PASSWORD_HASH,
           dateSolicitud: dateSolicitud ?? null,
           timeSolicitud: timeSolicitud ?? null,

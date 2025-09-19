@@ -5,6 +5,8 @@ import { SIPContext } from "../../context/JsSIP/JsSIPContext";
 import PanelContext from "../../context/Panel/PanelContext";
 import { LocalStorageService } from "../LocalStorageService";
 import { connectSocket, disconnectSocket, offForceLogout, onForceLogout } from "../../Socket/Socket";
+import { useIdleTimer } from "../../Hooks/useIdleTimer";
+import moment from "moment";
 
 export default function ProtectedSessionGuard({ children }) {
     const { closeSession } = useContext(SIPContext) || {};
@@ -115,6 +117,54 @@ export default function ProtectedSessionGuard({ children }) {
             clearTimeout(expireTimer);
         };
     }, []);
+
+    const handleIdleLogout = async () => {
+        const ls = new LocalStorageService();
+        const token = ls.getAccessToken?.();
+
+        try {
+            const dateSolicitud = moment().format("YYYY-MM-DD");
+            const timeSolicitud = moment().format("HH:mm:ss");
+
+            await fetch(`${process.env.REACT_APP_ROUTE_API}logout-inactividad`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({
+                    dateSolicitud,
+                    timeSolicitud,
+                    user: panelContext.userLogin.USUARIO,
+                    password: panelContext.userLogin.PASSWORD,
+                }),
+            }).catch(() => {});
+        } catch (e) {}
+
+        sessionStorage.setItem("forcedLogoutMsg", "Tu sesión expiró por inactividad (token vencido).");
+
+        try {
+            closeSession?.();
+        } catch {}
+
+        sessionStorage.removeItem("usrm");
+        ls.clearToken();
+        panelContext.setUserLogin(null);
+        panelContext.setSelectedEntityId?.(null);
+
+        disconnectSocket();
+        history.replace("/");
+    };
+
+    useIdleTimer({
+        timeoutMs: 15 * 60 * 1000,
+        onIdle: handleIdleLogout,
+    });
+
+    // useIdleTimer({
+    //     timeoutMs: 2 * 60 * 1000,
+    //     onIdle: handleIdleLogout,
+    // });
 
     return <>{children}</>;
 }
