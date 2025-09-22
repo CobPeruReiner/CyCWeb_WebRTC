@@ -3,7 +3,7 @@ networks:
 
 services:
   web2:
-    user: "0:0"                          # correr como root para leer los certs
+    user: "0:0"
     build: ./Server
     container_name: cycweb-rtc-web
     restart: unless-stopped
@@ -17,8 +17,8 @@ services:
       rtc_api:
         condition: service_healthy
     ports:
-      - "8080:8080"                      # HTTP
-      - "444:444"                        # HTTPS
+      - "8080:8080"
+      - "444:444"
     volumes:
       - /srv/apps/CyC-GeoCampo/certbot/conf:/etc/letsencrypt:ro
       - /srv/apps/CyC-GeoCampo/certbot/www:/var/www/certbot:ro
@@ -74,7 +74,7 @@ services:
       rtc_api:
         condition: service_started
     ports:
-      - "8081:80"                        # frontend directo para pruebas
+      - "8081:80"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
       interval: 30s

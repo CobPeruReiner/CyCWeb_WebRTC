@@ -394,9 +394,42 @@ export const DialogFormGestion = (props) => {
                                             </>
                                         )}
                                     </div>
-                                    <div className="p-field">
+                                    {/* <div className="p-field">
                                         <label htmlFor="lastname1">Nombre del contacto</label>
                                         <InputText name="nomcontacto" value={formGestion.nomcontacto && formGestion.nomcontacto} onChange={handleChange} className="p-inputtext-sm" />
+                                    </div> */}
+                                    <div className="p-field">
+                                        <label htmlFor="lastname1">Nombre del contacto</label>
+                                        <InputText
+                                            name="nomcontacto"
+                                            value={formGestion.nomcontacto || ""}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+
+                                                const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]*$/;
+
+                                                if (!regex.test(value)) {
+                                                    toast.current.show({
+                                                        severity: "warn",
+                                                        summary: "Información",
+                                                        detail: "Solo se permiten letras y espacios.",
+                                                    });
+                                                    return;
+                                                }
+
+                                                if (value.length > 20) {
+                                                    toast.current.show({
+                                                        severity: "warn",
+                                                        summary: "Información",
+                                                        detail: "El nombre no puede superar los 20 caracteres.",
+                                                    });
+                                                    return;
+                                                }
+
+                                                handleChange(e);
+                                            }}
+                                            className="p-inputtext-sm"
+                                        />
                                     </div>
                                 </div>
                             </Card>
