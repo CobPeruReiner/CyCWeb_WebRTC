@@ -49,6 +49,7 @@ import axios from "axios";
 import { SIPContext } from "../../context/JsSIP/JsSIPContext";
 import { PhoneModal } from "../../components/JsSIP/PhoneModal";
 import { GestionJsSIP } from "../../components/GestionJsSIP/GestionJsSIP";
+import { Dropdown } from "primereact/dropdown";
 
 export const PanelGestion = (props) => {
     const { selectedPhone, setSelectedPhone, toast, toastJsIP, showFormNewGestionRTC, showPhone, dialogGestion, setDialogGestion, showInfoCampo, setShowInfoCampo, formGestionType, setFormGestionType } = useContext(SIPContext);
@@ -175,6 +176,20 @@ export const PanelGestion = (props) => {
     const [dataJudicial, setDataJudicial] = useState([]);
 
     const [modoLectura, setModoLectura] = useState(false);
+
+    // ======================== REQUERIMIENTO PEDRO ========================
+
+    const [selectedCategoryFilter, setSelectedCategoryFilter] = useState(null);
+    const [selectedFuenteFilter, setSelectedFuenteFilter] = useState(null);
+    const [searchType, setSearchType] = useState(null);
+
+    const filteredTelefonos = panelContext?.dataTelefonos?.filter((t) => {
+        const matchCategory = selectedCategoryFilter ? t.categoria === selectedCategoryFilter : true;
+        const matchFuente = selectedFuenteFilter ? t.FUENTE === selectedFuenteFilter : true;
+        return matchCategory && matchFuente;
+    });
+
+    // ======================== REQUERIMIENTO PEDRO ========================
 
     const [bloqueos, setBloqueos] = useState({
         bloqueaDemanda: false,
@@ -2788,6 +2803,15 @@ export const PanelGestion = (props) => {
 
     // ========================= REQUERIMIENTO JUDICIAL =========================
 
+    // ========================= REQUERIMIENTO PEDRO =========================
+
+    useEffect(() => {
+        setSelectedCategoryFilter(null);
+        setSelectedFuenteFilter(null);
+    }, [panelContext.selectedCustomer]);
+
+    // ========================= REQUERIMIENTO PEDRO =========================
+
     //************************** REPROGRAMATIONS (NEW) ********************** /
 
     const handleReprogramacionInfo = (paramIdentity) => {
@@ -3668,6 +3692,57 @@ export const PanelGestion = (props) => {
                                 </Card>
                             </div>
                             <div className="p-col-4">
+                                {/* ===================== REQUERIMIENTO PEDRO ===================== */}
+
+                                {panelContext.selectedCustomer && panelContext.dataTelefonos !== null && (
+                                    <div
+                                        style={{
+                                            marginTop: "8px",
+                                            marginBottom: "8px",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "10px",
+                                            flexWrap: "wrap",
+                                        }}
+                                    >
+                                        <span>Categoría:</span>
+                                        <Dropdown
+                                            value={selectedCategoryFilter}
+                                            options={[
+                                                { label: "Todos", value: null },
+                                                { label: "CD - Contacto Directo", value: "CD" },
+                                                { label: "NC - No Contacto", value: "NC" },
+                                                { label: "CI - Contacto Indirecto", value: "CI" },
+                                                { label: "SG - Sin Gestión", value: "SG" },
+                                            ]}
+                                            onChange={(e) => setSelectedCategoryFilter(e.value)}
+                                            placeholder="Categoría"
+                                            showClear
+                                            className="p-inputtext-sm"
+                                        />
+
+                                        <span>Fuente:</span>
+                                        <Dropdown
+                                            value={selectedFuenteFilter}
+                                            options={[
+                                                { label: "Todos", value: null },
+                                                { label: "ASIGNACION", value: "ASIGNACION" },
+                                                { label: "BUSQUEDA", value: "BUSQUEDA" },
+                                                { label: "GESTIONES", value: "GESTIONES" },
+                                                { label: "OTROS", value: "OTROS" },
+                                            ]}
+                                            onChange={(e) => setSelectedFuenteFilter(e.value)}
+                                            placeholder="Fuente"
+                                            showClear
+                                            className="p-inputtext-sm"
+                                        />
+                                    </div>
+                                )}
+
+                                {filteredTelefonos && <p style={{ fontSize: "12px", color: "#555", marginBottom: "10px" }}>{filteredTelefonos.length} teléfono(s) encontrado(s)</p>}
+
+                                {/* ===================== REQUERIMIENTO PEDRO ===================== */}
+
                                 <Card title="SCORE DE TELEFONOS" style={{ background: "#f8f9fa", position: "relative" }}>
                                     {/* Boton Telefono */}
                                     {/* <div style={{ position: "absolute", top: "2px", right: "10px" }}>
@@ -3703,6 +3778,12 @@ export const PanelGestion = (props) => {
                                                     <Column headerStyle={{ width: "250px" }} field="cartera" header="CARTERA"></Column>
                                                     <Column headerStyle={{ width: "100px" }} field="FUENTE" header="FUENTE"></Column>
                                                     <Column headerStyle={{ width: "250px" }} field="TIPO" header="TIPO"></Column>
+
+                                                    {/* ===================== REQUERIMIENTO PEDRO ===================== */}
+
+                                                    <Column headerStyle={{ width: "180px" }} field="FECHA_ORIGEN_NUMTELF" header="FECHA FUENTE" />
+
+                                                    {/* ===================== REQUERIMIENTO PEDRO ===================== */}
                                                 </DataTable>
                                             )}
                                             <div className="p-fluid p-formgrid p-grid p-mt-2"></div>

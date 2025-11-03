@@ -10,7 +10,9 @@ export function connectSocket(token) {
         } catch (e) {}
     }
 
-    socket = io("/", {
+    const API_URL = process.env.NODE_ENV === "production" ? "/" : "http://192.168.1.24:4389";
+
+    socket = io(API_URL, {
         path: "/api/socket.io",
         auth: { token },
         transports: ["websocket"],

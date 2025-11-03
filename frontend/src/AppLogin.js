@@ -23,15 +23,15 @@ import { LocalStorageService } from "./service/LocalStorageService";
 import PanelContext from "./context/Panel/PanelContext";
 import { Password } from "primereact/password";
 import { Toast } from "primereact/toast";
-import ReCAPTCHA from "react-google-recaptcha";
+// import ReCAPTCHA from "react-google-recaptcha";
 import moment from "moment";
 
 const BODY_CLASS = "body-overflow-hidden-login";
-const SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
+// const SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
 
 const AppLogin = () => {
     const toast = useRef(null);
-    const captchaRef = useRef(null);
+    // const captchaRef = useRef(null);
 
     const history = useHistory();
     const panelContext = useContext(PanelContext);
@@ -39,7 +39,7 @@ const AppLogin = () => {
     const [mensaje, setMensaje] = useState(null);
     const [login, setLogin] = useState({ user: "", password: "" });
     const [loading, setLoading] = useState(false);
-    const [captchaToken, setCaptchaToken] = useState(null);
+    // const [captchaToken, setCaptchaToken] = useState(null);
 
     useEffect(() => {
         document.body.classList.add(BODY_CLASS);
@@ -63,14 +63,15 @@ const AppLogin = () => {
         toast.current?.show({ severity, summary, detail, life });
     }, []);
 
-    const handleCaptchaChange = (token) => setCaptchaToken(token || null);
-    const resetCaptcha = () => {
-        setCaptchaToken(null);
-        captchaRef.current?.reset();
-    };
+    // const handleCaptchaChange = (token) => setCaptchaToken(token || null);
+
+    // const resetCaptcha = () => {
+    //     setCaptchaToken(null);
+    //     captchaRef.current?.reset();
+    // };
 
     const credencialesCompletas = login.user.trim() && login.password.trim();
-    const puedeEnviar = !!credencialesCompletas && !!captchaToken && !loading;
+    const puedeEnviar = !!credencialesCompletas && !loading;
 
     const handleClick = async () => {
         setMensaje(null);
@@ -79,14 +80,15 @@ const AppLogin = () => {
             setMensaje("Ingresa usuario y contraseña.");
             return;
         }
-        if (!captchaToken) {
-            setMensaje("Por favor, marca el reCAPTCHA.");
-            return;
-        }
+
+        // if (!captchaToken) {
+        //     setMensaje("Por favor, marca el reCAPTCHA.");
+        //     return;
+        // }
 
         setLoading(true);
         try {
-            const response = await new LoginService().logIn({ ...login, captchaToken, dateSolicitud: moment().format("YYYY-MM-DD"), timeSolicitud: moment().format("HH:mm:ss") });
+            const response = await new LoginService().logIn({ ...login, dateSolicitud: moment().format("YYYY-MM-DD"), timeSolicitud: moment().format("HH:mm:ss") });
 
             // console.log("Respuesta: ", response);
 
@@ -98,15 +100,15 @@ const AppLogin = () => {
                 history.push("/admin/gestion");
             } else if (response.status == 2) {
                 setMensaje(response.body);
-                resetCaptcha();
+                // resetCaptcha();
             } else {
                 setMensaje(response.body ?? "No se pudo iniciar sesión.");
-                resetCaptcha();
+                // resetCaptcha();
             }
         } catch (e) {
             console.error(e);
             setMensaje("Error de red. Intenta nuevamente.");
-            resetCaptcha();
+            // resetCaptcha();
         } finally {
             setLoading(false);
         }
@@ -166,12 +168,12 @@ const AppLogin = () => {
                             </div>
                         )}
 
-                        <div className="p-field p-grid">
+                        {/* <div className="p-field p-grid">
                             <label className="p-col-12 p-md-2"></label>
                             <div className="p-col-12 p-md-10">
                                 <ReCAPTCHA ref={captchaRef} sitekey={SITE_KEY} onChange={handleCaptchaChange} onExpired={resetCaptcha} onErrored={resetCaptcha} hl="es" />
                             </div>
-                        </div>
+                        </div> */}
 
                         <div className="p-fluid p-formgrid p-grid">
                             <div className="p-field p-col-12 p-md-9"></div>

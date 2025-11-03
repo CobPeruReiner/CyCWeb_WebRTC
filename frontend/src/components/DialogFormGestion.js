@@ -187,6 +187,48 @@ export const DialogFormGestion = (props) => {
         if (props.showInfoCampo && (typeof formGestion.iddireccion === "undefined" || formGestion.iddireccion === null)) return;
         if (formGestion.idefecto && isPromise && (typeof formGestion.fecha_promesa === "undefined" || formGestion.fecha_promesa === null || typeof formGestion.monto_promesa === "undefined" || formGestion.monto_promesa === null)) return;
 
+        // =========================== REQUERIMIENTO MARCHENA ===========================
+        if ([28, 29].includes(panelContext.selectedCarteraId) && isPromise) {
+            const idAccion = Number(formGestion.idaccion);
+            const idEfecto = Number(formGestion.idefecto);
+
+            const efectosValidosPorAccion = {
+                63: [670, 658],
+                64: [697, 685],
+                67: [724, 712],
+                68: [751, 739],
+            };
+
+            const efectoValido = efectosValidosPorAccion[idAccion] && efectosValidosPorAccion[idAccion].includes(idEfecto);
+
+            if (efectoValido) {
+                const capital = Number(panelContext.selectedCustomer?.CAPITAL || 0);
+                const montoPromesa = Number(formGestion.monto_promesa || 0);
+                const cumpleMonto = montoPromesa >= capital * 0.05;
+
+                const hoy = moment().startOf("day");
+                const fechaPromesa = moment(formGestion.fecha_promesa);
+                const dosDiasMas = moment().add(2, "days").endOf("day");
+                const mismoMes = fechaPromesa.isSame(hoy, "month");
+                const cumpleFecha = fechaPromesa.isBetween(hoy, dosDiasMas, null, "[]") && mismoMes;
+
+                if (!cumpleMonto || !cumpleFecha) {
+                    let mensaje = "";
+                    if (!cumpleMonto) mensaje += "El monto de promesa debe ser al menos el 5% del capital. ";
+                    if (!cumpleFecha) mensaje += "La fecha de promesa debe estar entre hoy y dos días más, dentro del mes actual.";
+
+                    toast.current.show({
+                        severity: "warn",
+                        summary: "Validación",
+                        detail: mensaje.trim(),
+                        life: 8000,
+                    });
+                    return;
+                }
+            }
+        }
+        // =========================== REQUERIMIENTO MARCHENA ===========================
+
         let gestionService = new GestionService();
         formGestion.identificador = props.customer.identificador;
 
@@ -550,7 +592,7 @@ export const DialogFormGestion = (props) => {
                                     </div>
                                 </div>
 
-                                {formGestion.idefecto && isPromise && (
+                                {/* {formGestion.idefecto && isPromise && (
                                     <React.Fragment>
                                         <div className="p-card-title-form p-pb-3">PROMESA DE PAGO</div>
 
@@ -584,7 +626,73 @@ export const DialogFormGestion = (props) => {
                                         </div>
                                         {submitted && formGestion.idefecto && isPromise && (!formGestion.fecha_promesa || !formGestion.monto_promesa) && <small className="p-invalid">La promesa de pago es requerido.</small>}
                                     </React.Fragment>
+                                )} */}
+
+                                {/* // =========================== REQUERIMIENTO MARCHENA =========================== */}
+                                {formGestion.idefecto && isPromise && (
+                                    <React.Fragment>
+                                        <div className="p-card-title-form p-pb-3">PROMESA DE PAGO</div>
+
+                                        {(() => {
+                                            const capital = Number(panelContext.selectedCustomer?.CAPITAL || 0);
+                                            const montoMinimo = capital * 0.05;
+                                            const carteraId = panelContext.selectedCarteraId;
+                                            const efectoId = Number(formGestion.idefecto);
+
+                                            const efectosValidosPorAccion = {
+                                                63: [670, 658],
+                                                64: [697, 685],
+                                                67: [724, 712],
+                                                68: [751, 739],
+                                            };
+                                            const esCarteraEspecial = [28, 29].includes(carteraId) && efectosValidosPorAccion[formGestion.idaccion] && efectosValidosPorAccion[formGestion.idaccion].includes(efectoId);
+
+                                            const hoy = moment().startOf("day").toDate();
+                                            const max2Dias = moment().add(2, "days").endOf("day").toDate();
+                                            const finDeMes = moment().endOf("month").toDate();
+
+                                            const maxDate = esCarteraEspecial ? new Date(Math.min(max2Dias.getTime(), finDeMes.getTime())) : getMaxPromiseDate(carteraId);
+
+                                            return (
+                                                <>
+                                                    <div className="p-fluid p-formgrid p-grid">
+                                                        <div className="p-field p-col">
+                                                            <div className="p-inputgroup">
+                                                                <Calendar name="fecha_promesa" placeholder="FECHA" minDate={hoy} maxDate={maxDate} readOnlyInput className="p-inputtext-sm" appendTo={document.body} value={formGestion.fecha_promesa} onChange={handleChange} />
+                                                                <span className="p-inputgroup-addon">
+                                                                    <i className="pi pi-calendar"></i>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="p-field p-col">
+                                                            <div className="p-inputgroup">
+                                                                <InputNumber
+                                                                    name="monto_promesa"
+                                                                    placeholder={esCarteraEspecial ? `MONTO (mínimo ${montoMinimo.toFixed(2)})` : "MONTO"}
+                                                                    className={`p-inputtext-sm ${submitted && formGestion.monto_promesa < montoMinimo ? "p-invalid" : ""}`}
+                                                                    value={formGestion.monto_promesa}
+                                                                    onValueChange={handleChange}
+                                                                    mode="decimal"
+                                                                    minFractionDigits={2}
+                                                                    maxFractionDigits={2}
+                                                                />
+                                                                <span className="p-inputgroup-addon">
+                                                                    <i className="pi pi-money-bill"></i>
+                                                                </span>
+                                                            </div>
+
+                                                            {esCarteraEspecial && <small className="p-text-secondary">El monto debe ser mayor o igual a ({montoMinimo.toFixed(2)}).</small>}
+                                                        </div>
+                                                    </div>
+
+                                                    {submitted && formGestion.idefecto && isPromise && (!formGestion.fecha_promesa || !formGestion.monto_promesa) && <small className="p-invalid">La promesa de pago es requerida.</small>}
+                                                </>
+                                            );
+                                        })()}
+                                    </React.Fragment>
                                 )}
+                                {/* // =========================== REQUERIMIENTO MARCHENA =========================== */}
                             </Card>
                         </div>
                     </div>

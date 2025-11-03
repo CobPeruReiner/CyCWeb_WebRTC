@@ -17,8 +17,6 @@ ReactDOM.render(
             <Switch>
                 <PanelState>
                     <SIPProvider>
-                        {/* <Route exact path="/" render={(props) => <AppLogin {...props} />} />
-                        <Route path="/admin" render={(props) => <App {...props} />} /> */}
                         <Route exact path="/" render={(props) => <AppLogin {...props} />} />
                         <Route
                             path="/admin"

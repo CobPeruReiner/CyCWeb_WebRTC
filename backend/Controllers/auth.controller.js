@@ -33,13 +33,13 @@ const Login = async (req, res) => {
       .json({ body: "Usuario o contraseña inválida", status: "1" });
   }
 
-  const captcha = await verifyCaptcha(captchaToken, req.ip);
+  // const captcha = await verifyCaptcha(captchaToken, req.ip);
 
-  if (!captcha?.success) {
-    console.timeEnd("Login_query_time");
-    console.warn("Captcha inválido:", captcha && captcha["error-codes"]);
-    return res.status(200).json({ body: "Captcha inválido", status: "1" });
-  }
+  // if (!captcha?.success) {
+  //   console.timeEnd("Login_query_time");
+  //   console.warn("Captcha inválido:", captcha && captcha["error-codes"]);
+  //   return res.status(200).json({ body: "Captcha inválido", status: "1" });
+  // }
 
   try {
     // Si es estado 5, entonces no permites loguear

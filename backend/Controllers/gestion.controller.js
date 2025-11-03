@@ -67,7 +67,6 @@ const getGestionByIdentificador = async (req, res) => {
   try {
     console.time("getGestionByIdentificador_query_time");
 
-    // Obtener el nombre de la tabla desde tabla_log
     const tablaLogQuery = `SELECT nombre FROM tabla_log WHERE id = :id_table`;
     const tablaLog = await db.query(tablaLogQuery, {
       replacements: { id_table },
@@ -82,34 +81,58 @@ const getGestionByIdentificador = async (req, res) => {
     let typeResult = 1;
     let infoBase = [];
 
-    // String vacio si es null
-    const filterValue = filter ? filter : "";
+    const filterValue = filter ? filter.trim() : "";
 
-    // Primera consulta: Buscar por identificador
-    if (filterValue !== "") {
-      const queryIdentificador = `SELECT * FROM ${tableName} WHERE identificador = :filter AND ESTADO != 'RETIRADO'`;
-      infoBase = await db.query(queryIdentificador, {
-        replacements: { filter: filterValue },
+    if (filterValue === "") {
+      console.log("Filtro vacío → devolviendo últimos 10 registros");
+      const queryUltimos = `
+        SELECT * 
+        FROM ${tableName} 
+        WHERE ESTADO != 'RETIRADO' 
+        ORDER BY id DESC 
+        LIMIT 10
+      `;
+      infoBase = await db.query(queryUltimos, {
         type: QueryTypes.SELECT,
       });
+
+      console.timeEnd("getGestionByIdentificador_query_time");
+      return res.status(200).json({ result: infoBase, typeResult: 0 });
     }
 
-    // Segunda consulta: Buscar por documento si la primera está vacía
-    if (infoBase.length === 0 && filterValue !== "") {
-      typeResult = 2;
+    const queryIdentificador = `
+      SELECT * 
+      FROM ${tableName} 
+      WHERE identificador = :filter 
+      AND ESTADO != 'RETIRADO'
+    `;
+    infoBase = await db.query(queryIdentificador, {
+      replacements: { filter: filterValue },
+      type: QueryTypes.SELECT,
+    });
 
-      const queryDocumento = `SELECT * FROM ${tableName} WHERE documento = :filter AND ESTADO != 'RETIRADO'`;
+    if (infoBase.length === 0) {
+      typeResult = 2;
+      const queryDocumento = `
+        SELECT * 
+        FROM ${tableName} 
+        WHERE documento = :filter 
+        AND ESTADO != 'RETIRADO'
+      `;
       infoBase = await db.query(queryDocumento, {
         replacements: { filter: filterValue },
         type: QueryTypes.SELECT,
       });
     }
 
-    // Tercera consulta: Buscar por nombre si las dos anteriores están vacías
     if (infoBase.length === 0) {
       typeResult = 3;
-
-      const queryNombre = `SELECT * FROM ${tableName} WHERE LOWER(NOMBRE) LIKE :filter AND ESTADO != 'RETIRADO'`;
+      const queryNombre = `
+        SELECT * 
+        FROM ${tableName} 
+        WHERE LOWER(NOMBRE) LIKE :filter 
+        AND ESTADO != 'RETIRADO'
+      `;
       infoBase = await db.query(queryNombre, {
         replacements: { filter: `%${filterValue.toLowerCase()}%` },
         type: QueryTypes.SELECT,
@@ -117,11 +140,9 @@ const getGestionByIdentificador = async (req, res) => {
     }
 
     console.timeEnd("getGestionByIdentificador_query_time");
-
     res.status(200).json({ result: infoBase, typeResult });
   } catch (error) {
     console.timeEnd("getGestionByIdentificador_query_time");
-
     res.status(500).json({
       error: "Error en getGestionByIdentificador",
       detalle: error.message,
@@ -251,37 +272,71 @@ const getTelefonosContact = async (req, res) => {
     }
 
     console.log("================================================");
-    console.log("Obteniendo telefonos de contacto: ", documento);
+    console.log("Obteniendo teléfonos de contacto:", documento);
 
     console.time("getTelefonosContact_query_time");
 
     const queryString = `
-      SELECT IDTELEFONO, telefono NUMERO,
-        case when categoria = 'CONTACTO DIRECTO' then 'CD' 
-        when categoria = 'NO CONTACTO' then 'NC'
-        when categoria = 'CONTACTO INDIRECTO' then 'CI'
-        ELSE 'SG' END categoria, cartera, Fuente, tipo from
-        (SELECT t.IDTELEFONO,t.NUMERO telefono,
-        c.cartera,
-        t.FUENTE,
-        case when t.FUENTE = 'ASIGNACION' then 1
-        when t.FUENTE = 'BUSQUEDA' then 4
-        when t.FUENTE = 'GESTIONES' then 2
-        ELSE 3 END PESO_asig,
-        t.TIPO,
-        IFNULL((SELECT c.CATEGORIA FROM gestion_tmk g
-        INNER JOIN efecto e ON e.IDEFECTO = g.IDEFECTO
-        INNER JOIN categoria c ON c.IDCATEGORIA = e.IDCATEGORIA
-        WHERE g.IDTELEFONO = t.IDTELEFONO ORDER BY fecha_tmk DESC LIMIT 1),'SIN GESTION') categoria,
-        IFNULL((SELECT c.peso FROM gestion_tmk g
-        INNER JOIN efecto e ON e.IDEFECTO = g.IDEFECTO
-        INNER JOIN categoria c ON c.IDCATEGORIA = e.IDCATEGORIA
-        WHERE g.IDTELEFONO = t.IDTELEFONO ORDER BY fecha_tmk DESC LIMIT 1),100) peso
+      SELECT 
+        IDTELEFONO, 
+        telefono AS NUMERO,
+        CASE 
+          WHEN categoria = 'CONTACTO DIRECTO' THEN 'CD' 
+          WHEN categoria = 'NO CONTACTO' THEN 'NC'
+          WHEN categoria = 'CONTACTO INDIRECTO' THEN 'CI'
+          ELSE 'SG' 
+        END AS categoria, 
+        cartera, 
+        Fuente, 
+        tipo, 
+        PESO_asig,
+        DATE_FORMAT(
+          CASE 
+            WHEN FECHA_ORIGEN_NUMTELF = '1900-01-01 00:00:00' THEN NULL 
+            ELSE FECHA_ORIGEN_NUMTELF 
+          END, 
+          '%Y-%m-%d'
+        ) AS FECHA_ORIGEN_NUMTELF
+      FROM (
+        SELECT 
+          t.IDTELEFONO,
+          t.NUMERO AS telefono,
+          c.cartera,
+          t.FUENTE,
+          t.FECHA_ORIGEN_NUMTELF,
+          CASE 
+            WHEN t.FUENTE = 'ASIGNACION' THEN 1
+            WHEN t.FUENTE = 'BUSQUEDA' THEN 4
+            WHEN t.FUENTE = 'GESTIONES' THEN 2
+            ELSE 3 
+          END PESO_asig,
+          t.TIPO,
+          IFNULL((
+            SELECT c.CATEGORIA
+            FROM gestion_tmk g
+            INNER JOIN efecto e ON e.IDEFECTO = g.IDEFECTO
+            INNER JOIN categoria c ON c.IDCATEGORIA = e.IDCATEGORIA
+            WHERE g.IDTELEFONO = t.IDTELEFONO
+            ORDER BY c.peso ASC, g.fecha_tmk DESC
+            LIMIT 1
+          ),'SIN GESTION') categoria,
+          IFNULL((
+            SELECT c.peso
+            FROM gestion_tmk g
+            INNER JOIN efecto e ON e.IDEFECTO = g.IDEFECTO
+            INNER JOIN categoria c ON c.IDCATEGORIA = e.IDCATEGORIA
+            WHERE g.IDTELEFONO = t.IDTELEFONO
+            ORDER BY c.peso ASC, g.fecha_tmk DESC
+            LIMIT 1
+          ),100) peso
         FROM telefonos_actual t
         INNER JOIN cartera c ON c.id = t.ID_CARTERA
-        where doc = :docnumber
-        AND t.estado =1 ORDER BY 8,5,1 ASC )j
-        ORDER BY 3 ASC`;
+        WHERE doc = :docnumber
+          AND t.estado = 1
+        ORDER BY 8,5,1 ASC
+      ) j
+      ORDER BY PESO_asig ASC, FECHA_ORIGEN_NUMTELF DESC;
+    `;
 
     const telefonos = await db.query(queryString, {
       replacements: { docnumber: documento },
