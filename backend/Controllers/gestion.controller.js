@@ -1304,29 +1304,38 @@ const addTelefono = async (req, res) => {
 
     console.time("addTelefono_query_time");
 
-    // Llamada al procedimiento almacenado para verificar si el teléfono existe
+    // Llamada al procedimiento almacenado para verificar si el teléfono existe o está en lista negra
     const [exists] = await db.query(
-      "CALL sp_verificar_telefonos(:idcartera, :document, :source, :number)",
+      "CALL sp_verificar_telefonos_prueba(:idcartera, :document, :source, :number)",
       { replacements: { idcartera, document, source, number } }
     );
 
     console.log("===========================================");
     console.log("exists: ", exists);
 
-    if (exists && exists.result === 1) {
-      console.timeEnd("addTelefono_query_time");
+    const resultado = exists?.result;
 
-      return res.status(409).json({ message: "El teléfono ya existe" });
+    // Si el número está en lista negra
+    if (resultado === 2) {
+      console.timeEnd("addTelefono_query_time");
+      return res
+        .status(409)
+        .json({ message: "El número se encuentra en lista negra." });
     }
 
-    // Insertar nuevo registro en la tabla telefonos_actual
+    // Si el teléfono ya existe
+    if (resultado === 1) {
+      console.timeEnd("addTelefono_query_time");
+      return res.status(409).json({ message: "El teléfono ya existe." });
+    }
+
+    // Si no existe, proceder a insertar
     const identificador = `${document}-${number}-${idcartera}-${source}`;
     const fechaReg = moment().tz("America/Lima").format("YYYY-MM-DD HH:mm:ss");
+    const tipo = "GESTIONES DIARIAS";
 
     console.log("===========================================");
     console.log("Identificador: ", identificador, "Fecha: ", fechaReg);
-
-    const tipo = "GESTIONES DIARIAS";
 
     await db.query(
       `INSERT INTO telefonos_actual
@@ -1346,34 +1355,58 @@ const addTelefono = async (req, res) => {
       }
     );
 
-    // Obtener datos del teléfono insertado (Simulación de getTelefonoBy)
+    // Obtener datos actualizados del teléfono (equivalente a getTelefonoBy)
     const queryString = `
-      SELECT IDTELEFONO, telefono NUMERO,
-        case when categoria = 'CONTACTO DIRECTO' then 'CD' 
-        when categoria = 'NO CONTACTO' then 'NC'
-        when categoria = 'CONTACTO INDIRECTO' then 'CI'
-        ELSE 'SG' END categoria, cartera, Fuente, tipo from
-        (SELECT t.IDTELEFONO,t.NUMERO telefono,
-        c.cartera,
-        t.FUENTE,
-        case when t.FUENTE = 'ASIGNACION' then 1
-        when t.FUENTE = 'BUSQUEDA' then 4
-        when t.FUENTE = 'GESTIONES' then 2
-        ELSE 3 END PESO_asig,
-        t.TIPO,
-        IFNULL((SELECT c.CATEGORIA FROM gestion_tmk g
-        INNER JOIN efecto e ON e.IDEFECTO = g.IDEFECTO
-        INNER JOIN categoria c ON c.IDCATEGORIA = e.IDCATEGORIA
-        WHERE g.IDTELEFONO = t.IDTELEFONO ORDER BY fecha_tmk DESC LIMIT 1),'SIN GESTION') categoria,
-        IFNULL((SELECT c.peso FROM gestion_tmk g
-        INNER JOIN efecto e ON e.IDEFECTO = g.IDEFECTO
-        INNER JOIN categoria c ON c.IDCATEGORIA = e.IDCATEGORIA
-        WHERE g.IDTELEFONO = t.IDTELEFONO ORDER BY fecha_tmk DESC LIMIT 1),100) peso
+      SELECT 
+        IDTELEFONO, 
+        telefono AS NUMERO,
+        CASE 
+          WHEN categoria = 'CONTACTO DIRECTO' THEN 'CD' 
+          WHEN categoria = 'NO CONTACTO' THEN 'NC'
+          WHEN categoria = 'CONTACTO INDIRECTO' THEN 'CI'
+          ELSE 'SG' 
+        END AS categoria, 
+        cartera, 
+        Fuente, 
+        tipo 
+      FROM (
+        SELECT 
+          t.IDTELEFONO,
+          t.NUMERO AS telefono,
+          c.cartera,
+          t.FUENTE,
+          CASE 
+            WHEN t.FUENTE = 'ASIGNACION' THEN 1
+            WHEN t.FUENTE = 'BUSQUEDA' THEN 4
+            WHEN t.FUENTE = 'GESTIONES' THEN 2
+            ELSE 3 
+          END PESO_asig,
+          t.TIPO,
+          IFNULL((
+            SELECT c.CATEGORIA 
+            FROM gestion_tmk g
+            INNER JOIN efecto e ON e.IDEFECTO = g.IDEFECTO
+            INNER JOIN categoria c ON c.IDCATEGORIA = e.IDCATEGORIA
+            WHERE g.IDTELEFONO = t.IDTELEFONO 
+            ORDER BY fecha_tmk DESC 
+            LIMIT 1
+          ), 'SIN GESTION') categoria,
+          IFNULL((
+            SELECT c.peso 
+            FROM gestion_tmk g
+            INNER JOIN efecto e ON e.IDEFECTO = g.IDEFECTO
+            INNER JOIN categoria c ON c.IDCATEGORIA = e.IDCATEGORIA
+            WHERE g.IDTELEFONO = t.IDTELEFONO 
+            ORDER BY fecha_tmk DESC 
+            LIMIT 1
+          ), 100) peso
         FROM telefonos_actual t
         INNER JOIN cartera c ON c.id = t.ID_CARTERA
-        where doc = :docnumber
-        AND t.estado =1 ORDER BY 8,5,1 ASC )j
-        ORDER BY 3 ASC
+        WHERE doc = :docnumber
+          AND t.estado = 1
+        ORDER BY 8, 5, 1 ASC
+      ) j
+      ORDER BY 3 ASC
     `;
 
     const telefonos = await db.query(queryString, {
@@ -1386,7 +1419,6 @@ const addTelefono = async (req, res) => {
     res.status(200).json(telefonos);
   } catch (error) {
     console.timeEnd("addTelefono_query_time");
-
     console.error("Error al insertar teléfono:", error);
     return res.status(500).json({ message: "Error interno del servidor" });
   }
