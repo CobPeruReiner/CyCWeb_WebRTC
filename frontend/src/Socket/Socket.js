@@ -10,7 +10,7 @@ export function connectSocket(token) {
         } catch (e) {}
     }
 
-    const API_URL = process.env.NODE_ENV === "production" ? "/" : "http://192.168.1.24:4389";
+    const API_URL = process.env.NODE_ENV === "production" ? "/" : process.env.REACT_APP_ROUTE_API;
 
     socket = io(API_URL, {
         path: "/api/socket.io",

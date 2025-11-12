@@ -2581,6 +2581,10 @@ export const PanelGestion = (props) => {
             setDataHistorial([]);
             setDataHistorialFilter([]);
             setDataAgendamientos([]);
+
+            // Tipo de busqueda
+            setSearchType(data.typeResult);
+
             let arr = data.result.reduce((hash, obj) => {
                 if (obj["NOMBRE"] === undefined || Object.keys(hash).length > 2) return hash;
                 return Object.assign(hash, { [obj["NOMBRE"]]: (hash[obj["NOMBRE"]] || []).concat(obj.identificador) });
@@ -3071,6 +3075,27 @@ export const PanelGestion = (props) => {
                         <div className="p-grid ">
                             <div className="p-col-12">
                                 <Card title="INFORMACIÓN DE LA DEUDA" style={{ background: "#f8f9fa" }}>
+                                    {searchType === 0 && (
+                                        <p style={{ fontSize: "12px", color: "#888", marginBottom: "8px" }}>
+                                            Mostrando los últimos <strong>10 registros recientes</strong>
+                                        </p>
+                                    )}
+                                    {searchType === 1 && (
+                                        <p style={{ fontSize: "12px", color: "#888", marginBottom: "8px" }}>
+                                            Búsqueda realizada por <strong>identificador</strong>
+                                        </p>
+                                    )}
+                                    {searchType === 2 && (
+                                        <p style={{ fontSize: "12px", color: "#888", marginBottom: "8px" }}>
+                                            Búsqueda realizada por <strong>documento</strong>
+                                        </p>
+                                    )}
+                                    {searchType === 3 && (
+                                        <p style={{ fontSize: "12px", color: "#888", marginBottom: "8px" }}>
+                                            Búsqueda realizada por <strong>nombre</strong>
+                                        </p>
+                                    )}
+
                                     {columnsGridMain && (
                                         <>
                                             {columnsGridMain.length > 0 ? (

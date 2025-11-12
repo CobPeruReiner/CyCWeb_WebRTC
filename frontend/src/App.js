@@ -40,6 +40,7 @@ const App = () => {
     const [dialogActualizar, setDialogActualizar] = useState(false);
     const [showInfoDireccion, setShowInfoDireccion] = useState(false);
     const [menu, setMenu] = useState([]);
+    const toast = useRef(null);
 
     useEffect(() => {
         removeClass(document.body, "body-overflow-hidden-login");
@@ -54,60 +55,58 @@ const App = () => {
     const base = (process.env.REACT_APP_ROUTE_BASE || "/").replace(/^\/#$/, "/");
 
     useEffect(() => {
-        let _menu = [];
-        // console.log("panelContext", panelContext);
-        if (!panelContext.userLogin) {
-            let localStorageService = new LocalStorageService();
-            let userLoginSession = null;
-            try {
-                userLoginSession = localStorageService.getUserLogin();
-            } catch (Exception) {
-                console.log("exception", Exception);
-                console.log("Error al obtener userLoginSession");
+        try {
+            // 1️⃣ Obtener usuario del contexto o del localStorage
+            const localStorageService = new LocalStorageService();
+            const user = panelContext.userLogin || localStorageService.getUserLogin();
+
+            // 2️⃣ Si no hay usuario → redirige al login
+            if (!user) {
+                console.warn("No hay usuario en sesión");
                 history.replace("/");
+                return;
             }
-            //console.log('userLoginSession',userLoginSession);
 
-            if (userLoginSession == null) {
-                console.log("No hay usuario");
-                history.replace("/");
-            } else {
-                panelContext.setUserLogin(userLoginSession);
+            // 3️⃣ Guardar el usuario en el contexto global
+            panelContext.setUserLogin(user);
 
-                localStorageService.getUserLogin().clients.forEach((element) => {
-                    _menu.push({
-                        label: element.nombre,
-                        command: () => {
-                            // debugger
-                            console.log("element", element);
-
-                            panelContext.setSelectedEntityId(element.id_tabla);
-                            panelContext.setSelectedCarteraId(element.idcartera);
-                            // window.location = "#/admin/gestion/" + element.id_tabla;
-                            history.push(`/admin/gestion/${element.id_tabla}`);
-                        },
-                    });
-                });
-                setMenu([{ label: "GESTIÓN ", items: _menu }]);
-            }
-        } else {
-            //console.log('Contiene valor context')
-            panelContext.userLogin.clients.forEach((element) => {
-                _menu.push({
-                    label: element.nombre,
-                    command: () => {
-                        panelContext.setSelectedEntityId(element.id_tabla);
-                        panelContext.setSelectedCarteraId(element.idcartera);
-                        // window.location = "#/admin/gestion/" + element.id_tabla;
-
-                        // debugger
-                        console.log("element 2: ", element);
-
-                        history.push(`/admin/gestion/${element.id_tabla}`);
+            // 4️⃣ Validar si tiene carteras configuradas
+            if (!user.clients || user.clients.length === 0) {
+                console.warn("El usuario no tiene carteras configuradas.");
+                setMenu([
+                    {
+                        label: "GESTIÓN",
+                        items: [
+                            {
+                                label: "Sin carteras configuradas",
+                                command: () => {
+                                    toast.current.show({
+                                        severity: "warn",
+                                        summary: "Aviso",
+                                        detail: "No tienes carteras configuradas actualmente.",
+                                    });
+                                },
+                            },
+                        ],
                     },
-                });
-            });
-            setMenu([{ label: "GESTIÓN ", items: _menu }]);
+                ]);
+                return;
+            }
+
+            // 5️⃣ Generar menú dinámico
+            const menu = user.clients.map((c) => ({
+                label: c.nombre,
+                command: () => {
+                    panelContext.setSelectedEntityId(c.id_tabla);
+                    panelContext.setSelectedCarteraId(c.idcartera);
+                    history.push(`/admin/gestion/${c.id_tabla}`);
+                },
+            }));
+
+            setMenu([{ label: "GESTIÓN", items: menu }]);
+        } catch (err) {
+            console.error("Error al cargar sesión o menú:", err);
+            history.replace("/");
         }
     }, []);
 
