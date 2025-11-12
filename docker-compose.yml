@@ -20,8 +20,8 @@ services:
       - "8080:8080"
       - "444:444"
     volumes:
-      - /srv/apps/CyC-GeoCampo/certbot/conf:/etc/letsencrypt:ro
-      - /srv/apps/CyC-GeoCampo/certbot/www:/var/www/certbot:ro
+      - /srv/apps/CyC-GeoCampo_Amazon/certbot/conf:/etc/letsencrypt:ro
+      - /srv/apps/CyC-GeoCampo_Amazon/certbot/www:/var/www/certbot:ro
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
       interval: 30s
