@@ -455,7 +455,10 @@ const getPagosIdentificadorCartera = async (req, res) => {
         DATE_FORMAT(c.fecha_baja, '%Y-%m-%d %H:%i:%s') AS fecha_baja,
         c.estado,
         c.idAnalistabd
-      FROM pagos p JOIN cartera c ON p.IDCARTERA = c.id WHERE IDENTIFICADOR = :identificador AND IDCARTERA = :cartera`;
+      FROM pagos p JOIN cartera c ON p.IDCARTERA = c.id WHERE IDENTIFICADOR = :identificador AND IDCARTERA = :cartera
+      AND p.IDESTADO != 2
+      ORDER BY FECHAPAG DESC
+    `;
 
     const pagos = await db.query(result, {
       replacements: { identificador, cartera: idcartera },
