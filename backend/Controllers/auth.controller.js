@@ -157,6 +157,63 @@ const Login = async (req, res) => {
 
     let currentTime = moment().utc().subtract(5, "hours");
 
+    if (
+      users.IDPERSONAL === 1235 || // Kevin
+      users.IDPERSONAL === 1391 || // Reiner
+      users.IDPERSONAL === 25 || // Manuel
+      users.IDPERSONAL === 1390 || // Walter
+      users.IDPERSONAL === 647 || // Eder
+      users.IDPERSONAL === 17 || // Carlos
+      users.IDPERSONAL === 1706 || // Brayan
+      currentTime.isBetween(minTime, maxTime)
+    ) {
+      console.log("Sin restricción de hora");
+
+      const api_token = jwt.sign(
+        { id: users.IDPERSONAL },
+        process.env.JWT_SECRET,
+        { expiresIn: "11h" }
+      );
+
+      await db.query(
+        "UPDATE personal SET api_token = :api_token WHERE IDPERSONAL = :IDPERSONAL",
+        {
+          replacements: { api_token, IDPERSONAL: users.IDPERSONAL },
+          type: QueryTypes.UPDATE,
+        }
+      );
+
+      notifyPreviousSession?.(users.IDPERSONAL);
+
+      const clients = await db.query(
+        `
+          SELECT 
+              cartera.cartera AS nombre,
+              tabla_log.id AS id_tabla,
+              tabla_log.id_cartera AS idcartera
+          FROM tabla_log
+          INNER JOIN asignacion_tabla ON tabla_log.id = asignacion_tabla.id_tabla
+          INNER JOIN cartera ON tabla_log.id_cartera = cartera.id
+          INNER JOIN cliente ON cartera.idcliente = cliente.id
+          WHERE asignacion_tabla.id_usuario = :IDPERSONAL
+          AND tabla_log.estado = 0
+        `,
+        {
+          replacements: { IDPERSONAL: users.IDPERSONAL },
+          type: QueryTypes.SELECT,
+        }
+      );
+
+      users.clients = clients;
+
+      console.timeEnd("Login_query_time");
+
+      return res.status(200).json({
+        body: { ...users, api_token },
+        status: "0",
+      });
+    }
+
     if (currentTime.isBetween(minTime, maxTime)) {
       const api_token = jwt.sign(
         { id: users.IDPERSONAL },
