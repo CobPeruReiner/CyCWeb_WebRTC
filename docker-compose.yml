@@ -87,32 +87,17 @@
 #       - appnet
 
 services:
-  frontend:
-    image: cycweb-rtc-frontend
-    build:
-      context: ./frontend
-    command: npm run build
-    env_file:
-      - ./frontend/.env.production
-    volumes:
-      - frontend-build:/app/build
-    depends_on:
-      - backend
-
   backend:
-    image: cycweb-rtc-backend
     build:
       context: ./backend
     env_file:
       - ./backend/.env.production
     volumes:
+      - ./frontend/build:/app/build          # monta el build del frontend
       - /var/log/cycweb_backend_logs:/app/logs
-      - frontend-build:/app/build
       - ./backend/assets:/app/backend/assets
       - ./backend/Adjuntos:/app/backend/Adjuntos
     command: ["node", "server.js"]
     ports:
       - "8081:8081"
-
-volumes:
-  frontend-build:
+    restart: unless-stopped

@@ -34,14 +34,14 @@ app.use(
     methods: "GET,POST,PUT,DELETE,OPTIONS",
     allowedHeaders: "Content-Type, Authorization, api_token",
     credentials: true,
-  })
+  }),
 );
 
 app.use(
   helmet({
     contentSecurityPolicy: false,
     crossOriginResourcePolicy: { policy: "cross-origin" },
-  })
+  }),
 );
 
 app.use(compression());
@@ -57,7 +57,7 @@ const baseAdjuntosPath = isProduction
 
 app.use(
   "/Adjuntos",
-  express.static(baseAdjuntosPath, { maxAge: "1h", etag: true })
+  express.static(baseAdjuntosPath, { maxAge: "1h", etag: true }),
 );
 
 app.get("/download/*", (req, res) => {
@@ -77,7 +77,7 @@ app.get("/download/*", (req, res) => {
 
 app.use(
   "/assets",
-  express.static(path.join(__dirname, "assets"), { maxAge: "5m", etag: true })
+  express.static(path.join(__dirname, "assets"), { maxAge: "5m", etag: true }),
 );
 
 // Login
@@ -111,5 +111,20 @@ app.use("/telefono", telefonosRoutes);
 app.use("/judicial", judicialRoutes);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
+
+const frontendBuildPath = path.join(__dirname, "..", "build");
+
+// Solo sirve frontend en producción
+if (isProduction && fs.existsSync(frontendBuildPath)) {
+  console.log("Frontend React disponible en:", frontendBuildPath);
+
+  // Archivos estáticos
+  app.use(express.static(frontendBuildPath));
+
+  // Todas las rutas que no sean API devuelven index.html
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(frontendBuildPath, "index.html"));
+  });
+}
 
 module.exports = { app };
