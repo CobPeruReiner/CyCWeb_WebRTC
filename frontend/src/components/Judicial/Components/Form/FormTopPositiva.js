@@ -92,7 +92,6 @@ export const FormTopPositiva = ({
                             {submitted && !form.nroCargoExpAdmAdjuntoSC && <small className="p-invalid">Adjunto es requerido.</small>}
                         </div>
 
-                        {/* TIPO DE BUSQUEDA */}
                         <div className="p-field p-col-12 p-md-6">
                             <span className="p-float-label">
                                 <Dropdown disabled={bloqueos.bloquearSaveInfoGestion} value={form.tipoBusqueda} options={tipoBUsqueda} onChange={handleTipoBusquedaChange} placeholder="Tipo búsqueda" className="p-inputtext-sm" />

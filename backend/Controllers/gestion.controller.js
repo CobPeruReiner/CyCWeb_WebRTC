@@ -244,7 +244,7 @@ const getHistorialRecords = async (req, res) => {
     // Filtrar promesas
     const expectedPromises = historialRecords.filter(
       (record) =>
-        record.fecha_promesa !== "0000-00-00" && record.monto_promesa > 0
+        record.fecha_promesa !== "0000-00-00" && record.monto_promesa > 0,
     );
 
     console.timeEnd("getHistorialRecords_query_time");
@@ -306,7 +306,6 @@ const getTelefonosContact = async (req, res) => {
           t.FECHA_ORIGEN_NUMTELF,
           CASE 
             WHEN t.FUENTE = 'ASIGNACION' THEN 1
-            WHEN t.FUENTE = 'BUSQUEDA' THEN 4
             WHEN t.FUENTE = 'GESTIONES' THEN 2
             ELSE 3 
           END PESO_asig,
@@ -828,7 +827,7 @@ const filterGestion = async (req, res) => {
     });
 
     const idsIdentificadores = resultIdentificadores.map(
-      (item) => item.IDENTIFICADOR
+      (item) => item.IDENTIFICADOR,
     );
 
     if (idsIdentificadores.length > 0) {
@@ -859,13 +858,13 @@ const filterGestion = async (req, res) => {
           if (column.optionSelect) {
             if (column.condition == 0) {
               whereQuery.push(
-                `${column.optionSelect} LIKE '%${column.value}%'`
+                `${column.optionSelect} LIKE '%${column.value}%'`,
               );
             } else {
               whereQuery.push(
                 `${column.optionSelect} ${
                   Constants.array_condition[column.condition]
-                } '${column.value}'`
+                } '${column.value}'`,
               );
             }
           }
@@ -1005,7 +1004,7 @@ const saveGestion = async (req, res) => {
         fecha_programacion && hora_programacion
           ? moment(
               `${fecha_programacion} ${hora_programacion}`,
-              "DD-MM-YYYY HH:mm"
+              "DD-MM-YYYY HH:mm",
             ).format("YYYY-MM-DD HH:mm:ss")
           : null;
 
@@ -1127,7 +1126,7 @@ const saveGestion = async (req, res) => {
               derivacion_canal_av || null,
               1,
             ],
-          }
+          },
         );
       }
 
@@ -1187,14 +1186,14 @@ const saveGestion = async (req, res) => {
                 "Content-Type": "application/json",
               },
               httpsAgent,
-            }
+            },
           );
 
           console.log("===========================================");
           console.log(
             "response: ",
             response.data.codigoRespuesta,
-            response.data.descripcionResp || ""
+            response.data.descripcionResp || "",
           );
         } else {
           return res.status(404).json({ error: "Autoplan no encontrado" });
@@ -1273,7 +1272,7 @@ const updateDireccion = async (req, res) => {
           fechaRegistro,
         },
         type: QueryTypes.INSERT,
-      }
+      },
     );
 
     const addresses = await db.query(
@@ -1281,7 +1280,7 @@ const updateDireccion = async (req, res) => {
       {
         replacements: { document },
         type: QueryTypes.SELECT,
-      }
+      },
     );
 
     console.timeEnd("updateDireccion_query_time");
@@ -1310,7 +1309,7 @@ const addTelefono = async (req, res) => {
     // Llamada al procedimiento almacenado para verificar si el teléfono existe o está en lista negra
     const [exists] = await db.query(
       "CALL sp_verificar_telefonos_prueba(:idcartera, :document, :source, :number)",
-      { replacements: { idcartera, document, source, number } }
+      { replacements: { idcartera, document, source, number } },
     );
 
     console.log("===========================================");
@@ -1355,7 +1354,7 @@ const addTelefono = async (req, res) => {
           source,
           idcartera,
         },
-      }
+      },
     );
 
     // Obtener datos actualizados del teléfono (equivalente a getTelefonoBy)
@@ -1380,7 +1379,6 @@ const addTelefono = async (req, res) => {
           t.FUENTE,
           CASE 
             WHEN t.FUENTE = 'ASIGNACION' THEN 1
-            WHEN t.FUENTE = 'BUSQUEDA' THEN 4
             WHEN t.FUENTE = 'GESTIONES' THEN 2
             ELSE 3 
           END PESO_asig,

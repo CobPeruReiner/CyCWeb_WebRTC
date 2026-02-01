@@ -612,7 +612,7 @@ export const PanelGestion = (props) => {
                 counter.montosa_dol += obj.MONEDA == "USD" && parseFloat(obj.SALDOPORPAGAR);
                 return counter;
             },
-            { montot_sol: 0, montot_dol: 0, montoc_sol: 0, montoc_dol: 0, montop_sol: 0, montop_dol: 0, montode_sol: 0, montode_dol: 0, montoca_sol: 0, montoca_dol: 0, montosa_sol: 0, montosa_dol: 0 }
+            { montot_sol: 0, montot_dol: 0, montoc_sol: 0, montoc_dol: 0, montop_sol: 0, montop_dol: 0, montode_sol: 0, montode_dol: 0, montoca_sol: 0, montoca_dol: 0, montosa_sol: 0, montosa_dol: 0 },
         );
 
         montos.indexCS = columnsGridMain ? columnsGridMain.findIndex((c) => c.field == "MONTOACOBRAR") : 1;
@@ -1759,7 +1759,6 @@ export const PanelGestion = (props) => {
                                             options={[
                                                 { label: "Todos", value: null },
                                                 { label: "ASIGNACION", value: "ASIGNACION" },
-                                                { label: "BUSQUEDA", value: "BUSQUEDA" },
                                                 { label: "GESTIONES", value: "GESTIONES" },
                                                 { label: "OTROS", value: "OTROS" },
                                             ]}
