@@ -212,7 +212,7 @@ const getHistorialRecords = async (req, res) => {
         LEFT JOIN accion a ON e.IDACCION = a.IDACCION
         LEFT JOIN contacto c ON gt.IDCONTACTO = c.IDCONTACTO
         LEFT JOIN motivo m ON gt.IDMOTIVO = m.IDMOTIVO
-        LEFT JOIN telefonos_actual t ON gt.IDTELEFONO = t.IDTELEFONO
+        INNER JOIN telefonos_actual t ON gt.IDTELEFONO = t.IDTELEFONO AND t.ESTADO=1
         LEFT JOIN direcciones d ON gt.IDDIRECCION = d.IDDIRECCION
         LEFT JOIN personal p ON gt.IDPERSONAL = p.IDPERSONAL
         LEFT JOIN categoria cat ON e.IDCATEGORIA = cat.IDCATEGORIA
