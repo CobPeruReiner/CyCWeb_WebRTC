@@ -45,8 +45,9 @@ const Login = async (req, res) => {
     // Si es estado 5, entonces no permites loguear
     const [bloqRow] = await db.query(
       "SELECT IDPERSONAL FROM personal WHERE DOC = :user AND IDESTADO = 5",
-      { replacements: { user }, type: QueryTypes.SELECT }
+      { replacements: { user }, type: QueryTypes.SELECT },
     );
+
     if (bloqRow) {
       console.timeEnd("Login_query_time");
       return res.status(200).json({
@@ -61,18 +62,25 @@ const Login = async (req, res) => {
       {
         replacements: { user },
         type: QueryTypes.SELECT,
-      }
+      },
     );
 
     console.log(
       "Usuario encontrado:",
       users && users.NOMBRES,
-      users && users.APELLIDOS
+      users && users.APELLIDOS,
     );
 
+    // ===============================
+    // PASSWORD INCORRECTO
+    // ===============================
     if (!users || md5(password) !== users.PASSWORD) {
-      const intentos = incAttempts(user);
-      console.warn(`Intento fallido para ${user}. Conteo=${intentos}.`);
+      // -----------------------------------
+      // LÓGICA DE INTENTOS (DESACTIVADA)
+      // -----------------------------------
+
+      // const intentos = incAttempts(user);
+      // console.warn(`Intento fallido para ${user}. Conteo=${intentos}.`);
 
       const userID = users?.IDPERSONAL ?? null;
 
@@ -82,29 +90,32 @@ const Login = async (req, res) => {
         timeSolicitud,
         3,
         user ?? null,
-        password ?? null
+        password ?? null,
       );
 
-      if (intentos >= MAX_ATTEMPTS) {
-        await bloquearSiCorresponde(user);
-
-        attemptsByDoc.delete(user);
-
-        console.timeEnd("Login_query_time");
-
-        return res.status(200).json({
-          body: "Has sido bloqueado temporalmente. Contacta a Soporte o RRHH.",
-          status: "1",
-        });
-      }
+      // if (intentos >= MAX_ATTEMPTS) {
+      //   await bloquearSiCorresponde(user);
+      //   attemptsByDoc.delete(user);
+      //
+      //   console.timeEnd("Login_query_time");
+      //
+      //   return res.status(200).json({
+      //     body: "Has sido bloqueado temporalmente. Contacta a Soporte o RRHH.",
+      //     status: "1",
+      //   });
+      // }
 
       console.timeEnd("Login_query_time");
+
       return res
         .status(200)
         .json({ body: "Usuario o contraseña inválida", status: "1" });
     }
 
-    resetAttempts(user);
+    // -----------------------------------
+    // RESET DE INTENTOS (DESACTIVADO)
+    // -----------------------------------
+    // resetAttempts(user);
 
     await registrarLogSesion(
       users.IDPERSONAL,
@@ -112,7 +123,7 @@ const Login = async (req, res) => {
       timeSolicitud,
       1,
       user ?? null,
-      password ?? null
+      password ?? null,
     );
 
     let fechaActual = moment().utc().subtract(5, "hours");
@@ -172,7 +183,7 @@ const Login = async (req, res) => {
       const api_token = jwt.sign(
         { id: users.IDPERSONAL },
         process.env.JWT_SECRET,
-        { expiresIn: "11h" }
+        { expiresIn: "11h" },
       );
 
       await db.query(
@@ -180,7 +191,7 @@ const Login = async (req, res) => {
         {
           replacements: { api_token, IDPERSONAL: users.IDPERSONAL },
           type: QueryTypes.UPDATE,
-        }
+        },
       );
 
       notifyPreviousSession?.(users.IDPERSONAL);
@@ -201,7 +212,7 @@ const Login = async (req, res) => {
         {
           replacements: { IDPERSONAL: users.IDPERSONAL },
           type: QueryTypes.SELECT,
-        }
+        },
       );
 
       users.clients = clients;
@@ -218,7 +229,7 @@ const Login = async (req, res) => {
       const api_token = jwt.sign(
         { id: users.IDPERSONAL },
         process.env.JWT_SECRET,
-        { expiresIn: "11h" }
+        { expiresIn: "11h" },
       );
 
       await db.query(
@@ -226,7 +237,7 @@ const Login = async (req, res) => {
         {
           replacements: { api_token, IDPERSONAL: users.IDPERSONAL },
           type: QueryTypes.UPDATE,
-        }
+        },
       );
 
       notifyPreviousSession?.(users.IDPERSONAL);
@@ -247,7 +258,7 @@ const Login = async (req, res) => {
         {
           replacements: { IDPERSONAL: users.IDPERSONAL },
           type: QueryTypes.SELECT,
-        }
+        },
       );
 
       users.clients = clients;
@@ -298,7 +309,7 @@ const Logout = async (req, res) => {
       {
         replacements: { IDPERSONAL: userId },
         type: QueryTypes.UPDATE,
-      }
+      },
     );
 
     await registrarLogSesion(
@@ -307,7 +318,7 @@ const Logout = async (req, res) => {
       timeSolicitud,
       2,
       user ? user : null,
-      password ? password : null
+      password ? password : null,
     );
 
     console.timeEnd("Logout_query_time");
@@ -333,7 +344,7 @@ const logOutInactividad = async (req, res) => {
 
     await db.query(
       "UPDATE personal SET api_token = NULL WHERE IDPERSONAL = :id",
-      { replacements: { id: userId }, type: QueryTypes.UPDATE }
+      { replacements: { id: userId }, type: QueryTypes.UPDATE },
     );
 
     try {
@@ -366,7 +377,7 @@ const ReLogin = async (req, res) => {
       {
         replacements: { user },
         type: QueryTypes.SELECT,
-      }
+      },
     );
 
     // console.log("================================================");
@@ -395,7 +406,7 @@ const ReLogin = async (req, res) => {
       {
         replacements: { IDPERSONAL: users.IDPERSONAL },
         type: QueryTypes.SELECT,
-      }
+      },
     );
 
     // Depuracion

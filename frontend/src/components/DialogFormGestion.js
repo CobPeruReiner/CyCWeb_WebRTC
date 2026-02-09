@@ -45,8 +45,8 @@ export const DialogFormGestion = (props) => {
     var arrayEfectosOptional = [13520, 13537];
 
     // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================
-    // const [formGestion, setFormGestion] = useState({ observacion: "", tipoCliente: null, autorizaCliente: 0 });
-    const [formGestion, setFormGestion] = useState({ observacion: "" });
+    const [formGestion, setFormGestion] = useState({ observacion: "", tipoCliente: null, autorizaCliente: 0 });
+    // const [formGestion, setFormGestion] = useState({ observacion: "" });
 
     const tipos = [
         { label: "Normal", value: 0, icon: "😊", title: "Cordial" },
@@ -168,14 +168,14 @@ export const DialogFormGestion = (props) => {
         setSubmitted(true);
 
         // ======================== REQUERIMIENTO PREVENCION RECLAMOS ========================
-        // if (formGestion.tipoCliente === null || formGestion.tipoCliente === undefined) {
-        //     toast.current.show({
-        //         severity: "warn",
-        //         summary: "Información",
-        //         detail: "Debe seleccionar un tipo de cliente.",
-        //     });
-        //     return;
-        // }
+        if (formGestion.tipoCliente === null || formGestion.tipoCliente === undefined) {
+            toast.current.show({
+                severity: "warn",
+                summary: "Información",
+                detail: "Debe seleccionar un tipo de cliente.",
+            });
+            return;
+        }
         // ======================== REQUERIMIENTO PREVENCION RECLAMOS ========================
 
         if (typeof formGestion.idaccion === "undefined" || formGestion.idaccion === null) return;
@@ -372,7 +372,7 @@ export const DialogFormGestion = (props) => {
                     "AV",
                     () => {
                         setDialogFormAgenVentas(true);
-                    }
+                    },
                 )}
             >
                 <div className="confirmation-content">
@@ -520,7 +520,7 @@ export const DialogFormGestion = (props) => {
                                                     <InputText name="telefonotipo" keyfilter="int" value={props.selectedPhone && props.selectedPhone.NUMERO} type="text" disabled={true} className="p-inputtext-sm" />
                                                 </div>
 
-                                                {/* <div className="p-col-4">
+                                                <div className="p-col-4">
                                                     <label>Aut. cliente</label>
                                                     <div className="p-d-flex align-items-center" style={{ gap: "6px" }}>
                                                         {props?.respuestasCliente
@@ -555,14 +555,10 @@ export const DialogFormGestion = (props) => {
                                                                 );
                                                             })}
                                                     </div>
-                                                </div>*/}
+                                                </div>
                                             </div>
                                             {/* ========================== REQUERIMIENTO PREVENCION RECLAMOS ========================== */}
 
-                                            {/* <div className="p-field">
-                                                <label htmlFor="firstname1">Teléfono del contacto</label>
-                                                <InputText name="telefonotipo" keyfilter="int" value={props.selectedPhone && props.selectedPhone.NUMERO} type="text" disabled={true} className="p-inputtext-sm" />
-                                            </div> */}
                                             <div className="p-field">
                                                 <label htmlFor="firstname1">Tipo de teléfono</label>
                                                 <InputText name="telefonotipo" value={props.selectedPhone && props.selectedPhone.TIPO} type="text" disabled={true} className="p-inputtext-sm" />
@@ -701,7 +697,7 @@ export const DialogFormGestion = (props) => {
                         {/* ========================== REQUERIMIENTO PREVENCION RECLAMOS ========================== */}
                         <div className="p-card-title-form p-pb-2" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
                             <strong>OBSERVACIÓN</strong>
-                            {/* <div className="d-flex align-items-center" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                            <div className="d-flex align-items-center" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                                 {props?.estadoAnimoCliente.map((estado) => (
                                     <div
                                         key={estado.IDEAGESTION}
@@ -733,7 +729,7 @@ export const DialogFormGestion = (props) => {
                                         <span>{estado.NOMBRE_ESTADO_ANIMO}</span>
                                     </div>
                                 ))}
-                            </div>*/}
+                            </div>
                         </div>
                         {/* ========================== REQUERIMIENTO PREVENCION RECLAMOS ========================== */}
 

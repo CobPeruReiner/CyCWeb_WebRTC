@@ -289,6 +289,36 @@ export const PanelGestion = (props) => {
     };
     // ========================= REQUERIMIENTO ESTADO DE ANIMO =========================
 
+    const loadEstadosAnimo = async () => {
+        try {
+            const { data } = await axios.get(`${API_URL_GESTION}/get-estados-animo`);
+
+            if (data.ok && Array.isArray(data.estados)) {
+                setEstadoAnimoCliente(data.estados);
+            } else {
+                setEstadoAnimoCliente([]);
+            }
+        } catch (error) {
+            console.error("Error al cargar estados de animo:", error);
+            setEstadoAnimoCliente([]);
+        }
+    };
+
+    const loadRespuestasCliente = async () => {
+        try {
+            const { data } = await axios.get(`${API_URL_GESTION}/get-respuestas-cliente`);
+
+            if (data.ok && Array.isArray(data.respuestas)) {
+                setrespuestasCliente(data.respuestas);
+            } else {
+                setrespuestasCliente([]);
+            }
+        } catch (error) {
+            console.error("Error al cargar respuestas del cliente:", error);
+            setrespuestasCliente([]);
+        }
+    };
+
     // ================= REQUERIMIENTO CARLOS DESCARGAR A CSV GESTIONES =================
 
     // Util: escapa valores CSV
@@ -850,6 +880,11 @@ export const PanelGestion = (props) => {
         };
     }, [entityId]);
 
+    useEffect(() => {
+        loadEstadosAnimo();
+        loadRespuestasCliente();
+    }, []);
+
     // ========================= REQUERIMIENTO PEDRO =========================
 
     useEffect(() => {
@@ -1271,7 +1306,7 @@ export const PanelGestion = (props) => {
                                                         className="p-datatable-sm p-datatable-gridlines"
                                                     >
                                                         {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
-                                                        {/* <Column
+                                                        <Column
                                                             body={renderEmojiEstadoAnimo}
                                                             header={
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
@@ -1285,7 +1320,7 @@ export const PanelGestion = (props) => {
                                                             }
                                                             headerStyle={{ width: "70px", textAlign: "center" }}
                                                             style={{ textAlign: "center" }}
-                                                        /> */}
+                                                        />
                                                         {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
                                                         <Column field="fecha_tmk" header="FECHA" headerStyle={{ width: "130px" }}></Column>
                                                         <Column field="ACCION" header="ACCION" headerStyle={{ width: "200px" }}></Column>
@@ -1296,7 +1331,7 @@ export const PanelGestion = (props) => {
                                                         <Column body={stateBodyTemplate} headerStyle={{ width: "450px" }} header="OBSERVACION"></Column>
                                                         <Column field="NUMERO" header="TELEFONO" headerStyle={{ width: "80px" }}></Column>
                                                         {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
-                                                        {/* <Column
+                                                        <Column
                                                             header={
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 512 512">
                                                                     <path
@@ -1343,7 +1378,7 @@ export const PanelGestion = (props) => {
                                                             }}
                                                             headerStyle={{ width: "70px", textAlign: "center" }}
                                                             style={{ textAlign: "center" }}
-                                                        /> */}
+                                                        />
 
                                                         {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
                                                         <Column field="CONTACTO" header="CONTACTO" headerStyle={{ width: "80px" }}></Column>
@@ -1365,7 +1400,7 @@ export const PanelGestion = (props) => {
                                                         className="p-datatable-sm p-datatable-gridlines"
                                                     >
                                                         {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
-                                                        {/* <Column
+                                                        <Column
                                                             body={renderEmojiEstadoAnimo}
                                                             header={
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
@@ -1379,7 +1414,7 @@ export const PanelGestion = (props) => {
                                                             }
                                                             headerStyle={{ width: "70px", textAlign: "center" }}
                                                             style={{ textAlign: "center" }}
-                                                        /> */}
+                                                        />
 
                                                         {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
                                                         <Column field="fecha_tmk" header="FECHA" headerStyle={{ width: "130px" }}></Column>
@@ -1390,7 +1425,7 @@ export const PanelGestion = (props) => {
                                                         <Column field="CONTACTO" header="CONTACTO" headerStyle={{ width: "80px" }}></Column>
                                                         <Column field="NOMCONTACTO" header="NOM. CONTACTO" headerStyle={{ width: "200px" }}></Column>
                                                         {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
-                                                        {/* <Column
+                                                        <Column
                                                             header={
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 512 512">
                                                                     <path
@@ -1437,7 +1472,7 @@ export const PanelGestion = (props) => {
                                                             }}
                                                             headerStyle={{ width: "70px", textAlign: "center" }}
                                                             style={{ textAlign: "center" }}
-                                                        /> */}
+                                                        />
 
                                                         {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
                                                         <Column field="PISOS" header="PISOS" headerStyle={{ width: "50px" }}></Column>
@@ -1459,7 +1494,7 @@ export const PanelGestion = (props) => {
                                                         className="p-datatable-sm p-datatable-gridlines"
                                                     >
                                                         {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
-                                                        {/* <Column
+                                                        <Column
                                                             body={renderEmojiEstadoAnimo}
                                                             header={
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
@@ -1473,7 +1508,7 @@ export const PanelGestion = (props) => {
                                                             }
                                                             headerStyle={{ width: "70px", textAlign: "center" }}
                                                             style={{ textAlign: "center" }}
-                                                        /> */}
+                                                        />
 
                                                         {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
                                                         <Column field="fecha_tmk" header="FECHA" headerStyle={{ width: "130px" }}></Column>
@@ -1483,7 +1518,7 @@ export const PanelGestion = (props) => {
                                                         <Column body={stateBodyTemplate} headerStyle={{ width: "450px" }} header="OBSERVACION"></Column>
                                                         <Column field="NUMERO" header="TELEFONO" headerStyle={{ width: "80px" }}></Column>
                                                         {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
-                                                        {/* <Column
+                                                        <Column
                                                             header={
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 512 512">
                                                                     <path
@@ -1530,7 +1565,7 @@ export const PanelGestion = (props) => {
                                                             }}
                                                             headerStyle={{ width: "70px", textAlign: "center" }}
                                                             style={{ textAlign: "center" }}
-                                                        /> */}
+                                                        />
 
                                                         {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
                                                         <Column field="CONTACTO" header="CONTACTO" headerStyle={{ width: "80px" }}></Column>
@@ -1544,7 +1579,7 @@ export const PanelGestion = (props) => {
                                                 <TabPanel header="PROMESAS">
                                                     <DataTable value={dataPromesa} style={{ fontSize: "12px" }} emptyMessage={"No se encontraron resultados"} scrollable scrollHeight="200px" loading={loading} className="p-datatable-sm p-datatable-gridlines">
                                                         {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
-                                                        {/* <Column
+                                                        <Column
                                                             body={renderEmojiEstadoAnimo}
                                                             header={
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
@@ -1558,7 +1593,7 @@ export const PanelGestion = (props) => {
                                                             }
                                                             headerStyle={{ width: "70px", textAlign: "center" }}
                                                             style={{ textAlign: "center" }}
-                                                        /> */}
+                                                        />
 
                                                         {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
                                                         <Column field="fecha_promesa" headerStyle={{ width: "130px" }} header="FECHA"></Column>
@@ -1568,7 +1603,7 @@ export const PanelGestion = (props) => {
                                                         <Column field="MOTIVO" headerStyle={{ width: "200px" }} header="MOTIVO"></Column>
                                                         <Column field="NUMERO" headerStyle={{ width: "200px" }} header="TEL. CONT."></Column>
                                                         {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
-                                                        {/* <Column
+                                                        <Column
                                                             header={
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 512 512">
                                                                     <path
@@ -1615,7 +1650,7 @@ export const PanelGestion = (props) => {
                                                             }}
                                                             headerStyle={{ width: "70px", textAlign: "center" }}
                                                             style={{ textAlign: "center" }}
-                                                        /> */}
+                                                        />
 
                                                         {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
                                                         <Column body={stateBodyTemplate} headerStyle={{ width: "450px" }} header="OBSERVACION"></Column>
@@ -1630,7 +1665,7 @@ export const PanelGestion = (props) => {
                                                     {panelContext.selectedCarteraId && panelContext.selectedCarteraId === 75 && (
                                                         <DataTable value={dataAgendamientos} style={{ fontSize: "12px" }} emptyMessage={"No se encontraron resultados"} scrollable scrollHeight="200px" loading={loading} className="p-datatable-sm p-datatable-gridlines">
                                                             {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
-                                                            {/* <Column
+                                                            <Column
                                                                 body={renderEmojiEstadoAnimo}
                                                                 header={
                                                                     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
@@ -1644,7 +1679,7 @@ export const PanelGestion = (props) => {
                                                                 }
                                                                 headerStyle={{ width: "70px", textAlign: "center" }}
                                                                 style={{ textAlign: "center" }}
-                                                            /> */}
+                                                            />
 
                                                             {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
                                                             <Column field="tienda" headerStyle={{ width: "130px" }} header="TIENDA"></Column>
@@ -1656,7 +1691,7 @@ export const PanelGestion = (props) => {
                                                             <Column body={stateBodyTemplateAV} headerStyle={{ width: "450px" }} header="OBSERVACION"></Column>
                                                             <Column field="derivacion_canal" headerStyle={{ width: "200px" }} header="DERIV. CANAL"></Column>
                                                             {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
-                                                            {/* <Column
+                                                            <Column
                                                                 header={
                                                                     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 512 512">
                                                                         <path
@@ -1703,7 +1738,7 @@ export const PanelGestion = (props) => {
                                                                 }}
                                                                 headerStyle={{ width: "70px", textAlign: "center" }}
                                                                 style={{ textAlign: "center" }}
-                                                            /> */}
+                                                            />
 
                                                             {/* // ============================ REQUERIMIENTO PREVENCION RECLAMOS ============================ */}
                                                             <Column field="personal" headerStyle={{ width: "200px" }} header="GESTOR"></Column>

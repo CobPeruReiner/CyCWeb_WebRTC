@@ -700,7 +700,7 @@ const getEstadosAnimo = async (req, res) => {
         IDEAGESTION,
         NOMBRE_ESTADO_ANIMO,
         DESCRIPCION
-      FROM SISTEMAGEST.ESTADO_GESTION
+      FROM ESTADO_GESTION
     `;
 
     const estados = await db.query(query, {
@@ -727,7 +727,7 @@ const getEstadosAutorizacion = async (req, res) => {
         IDAUTORIZATEL,
         NOMBRE_AUTORIZACION,
         DESCRIPCION
-      FROM SISTEMAGEST.AUTORIZACION_TELEFONICA
+      FROM AUTORIZACION_TELEFONICA
     `;
 
     const respuestas = await db.query(query, {
@@ -986,9 +986,9 @@ const saveGestion = async (req, res) => {
       let tablaAutoplan;
 
       if (idcartera == 48) {
-        tablaAutoplan = "SISTEMAGEST.C_AUTOPLAN_VIGENTE";
+        tablaAutoplan = "C_AUTOPLAN_VIGENTE";
       } else if (idcartera == 69) {
-        tablaAutoplan = "SISTEMAGEST.C_AUTOPLAN_NO_ADJUDICADO";
+        tablaAutoplan = "C_AUTOPLAN_NO_ADJUDICADO";
       }
 
       console.log("Id cartera: ", idcartera);
@@ -1032,10 +1032,10 @@ const saveGestion = async (req, res) => {
             estado,
             id_registro,
             monto_promesa,
-            fecha_promesa
+            fecha_promesa,
             -- ================ REQUERIMIENTO DE PEDRO DE EMOCIONES DE LLAMADA (NO APROBADO POR GERENCIA) ================
-            -- IDEAGESTION,
-            -- IDAUTORIZATEL
+            IDEAGESTION,
+            IDAUTORIZATEL
           )
             VALUES
           (
@@ -1060,10 +1060,10 @@ const saveGestion = async (req, res) => {
             ?,
             ?,
             ?,
-            ?
+            ?,
             -- ================ REQUERIMIENTO DE PEDRO DE EMOCIONES DE LLAMADA (NO APROBADO POR GERENCIA) ================
-            -- ?,
-            -- ?
+            ?,
+            ?
           )
         `;
 
